@@ -25,24 +25,7 @@ $json = static fn(string $campo): string => json_encode((string) ($valores[$camp
   A mascara e SO da tela: o que trafega no POST pode ir com parenteses e traco,
   porque o ClienteService joga fora tudo que nao e digito antes de gravar.
 -->
-<form class="cartao form" method="post" action="/cliente/salvar" x-data='{
-  telefone: <?= $json('telefone') ?>,
-  get digitos() { return this.telefone.replace(/\D/g, "") },
-  get telefoneCurto() { return this.digitos.length > 0 && this.digitos.length !== 10 && this.digitos.length !== 11 },
-  mascarar() {
-    const d = this.digitos.slice(0, 11)
-    const ddd = d.slice(0, 2)
-    const resto = d.slice(2)
-    const corte = d.length > 10 ? 5 : 4
-
-    if (d.length === 0) { this.telefone = ""; return }
-    if (resto.length === 0) { this.telefone = "(" + ddd; return }
-
-    this.telefone = resto.length > corte
-      ? "(" + ddd + ") " + resto.slice(0, corte) + "-" + resto.slice(corte)
-      : "(" + ddd + ") " + resto
-  }
-}'>
+<form class="cartao form" method="post" action="/cliente/salvar" x-data='telefone(<?= $json('telefone') ?>)'>
 
        <?php if ($id !== null): ?>
               <input type="hidden" name="id" value="<?= (int) $id ?>">
@@ -67,7 +50,7 @@ $json = static fn(string $campo): string => json_encode((string) ($valores[$camp
                      <p class="erro"><?= Security::escape($erro('telefone')) ?></p>
               <?php else: ?>
                      <!-- espelho do ClienteService::validar(); o else evita dois avisos iguais -->
-                     <p class="erro" x-show="telefoneCurto" x-cloak>Faltam digitos nesse telefone.</p>
+                     <p class="erro" x-show="curto" x-cloak>Faltam digitos nesse telefone.</p>
               <?php endif; ?>
        </div>
 

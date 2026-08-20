@@ -21,13 +21,9 @@ $emAtributo = JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG | JSON
 $json = static fn(string $campo): string => json_encode((string) ($valores[$campo] ?? ''), $emAtributo);
 
 ?>
-<form class="cartao form" method="post" action="/ciclo/salvar" x-data='{
-  numero: <?= $json('num_ciclo') ?>,
-  inicio: <?= $json('data_inicio') ?>,
-  termino: <?= $json('data_termino') ?>,
-  get sugestao() { return this.numero ? "Ciclo " + this.numero : "Ciclo" },
-  get terminoAntes() { return this.inicio !== "" && this.termino !== "" && this.termino < this.inicio }
-}'>
+<form class="cartao form" method="post" action="/ciclo/salvar" x-data='cicloForm(
+       <?= $json('num_ciclo') ?>, <?= $json('data_inicio') ?>, <?= $json('data_termino') ?>
+)'>
 
        <?php if ($id !== null): ?>
               <input type="hidden" name="id" value="<?= (int) $id ?>">

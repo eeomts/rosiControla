@@ -26,13 +26,7 @@ foreach ($clientes as $cliente) {
 }
 
 ?>
-<div x-data='{
-  busca: "",
-  termos: <?= json_encode(array_values($termos), $emAtributo) ?>,
-  get alvo() { return this.busca.toLowerCase().trim() },
-  casa(linha) { return this.alvo === "" || linha.dataset.busca.includes(this.alvo) },
-  get achou() { return this.alvo === "" || this.termos.some(t => t.includes(this.alvo)) }
-}'>
+<div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome ou telefone">
@@ -74,12 +68,12 @@ foreach ($clientes as $cliente) {
 
                                     <!-- sem JS o form posta de primeira; com Alpine o 1o clique arma a confirmacao -->
                                     <form method="post" action="/cliente/excluir"
-                                        x-data="{ confirmando: false }"
-                                        @submit="if (!confirmando) { $event.preventDefault(); confirmando = true }"
-                                        @click.outside="confirmando = false">
+                                        x-data="confirmacao"
+                                        @submit="armar($event)"
+                                        @click.outside="cancelar()">
                                         <input type="hidden" name="id" value="<?= (int) $cliente->id ?>">
                                         <button class="botao botao-perigo" x-text="confirmando ? 'Excluir mesmo?' : 'Excluir'">Excluir</button>
-                                        <button type="button" class="botao botao-fantasma" x-show="confirmando" x-cloak @click="confirmando = false">Cancelar</button>
+                                        <button type="button" class="botao botao-fantasma" x-show="confirmando" x-cloak @click="cancelar()">Cancelar</button>
                                     </form>
                                 </div>
                             </td>

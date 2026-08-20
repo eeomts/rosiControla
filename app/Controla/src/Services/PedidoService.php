@@ -8,12 +8,11 @@ use Controla\Utils\Concerns\NormalizaMoeda;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Models\Pedido;
 use Controla\Models\VariacaoProduto;
+use Controla\Models\VendaVariacaoRel;
 use Controla\Models\Produto;
 use RuntimeException;
 
 /**
- * Cadastro do pedido e das unidades que entraram por ele.
- *
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
@@ -25,8 +24,6 @@ final class PedidoService
     private const QUANTIDADE_MAXIMA = 999;
 
     /**
-     * Cria (id null) ou atualiza o cabecalho do pedido.
-     *
      * @param array<string,mixed> $dados Campos crus vindos do formulario.
      * @throws DadosInvalidosException Com o mapa campo => mensagem.
      * @throws RuntimeException Se o id informado nao existe.
@@ -49,8 +46,6 @@ final class PedidoService
     }
 
     /**
-     * Cadastra N unidades de um produto neste pedido -- uma linha por unidade.
-     *
      * @param array<string,mixed> $dados fk_produto, quantidade, mon_custo, mon_venda, data_validade
      * @return list<VariacaoProduto>
      * @throws DadosInvalidosException
@@ -82,7 +77,6 @@ final class PedidoService
         return $unidades;
     }
 
-    /** Tira uma unidade do pedido e refaz os totais. */
     public function removerUnidade(VariacaoProduto $unidade): void
     {
         $pedido = $unidade->pedido;
@@ -94,16 +88,9 @@ final class PedidoService
         }
     }
 
-    /**
-     * Refaz os totais a partir das unidades do pedido.
-     *
-     * O lucro estimado e uma meta: supoe que tudo sera vendido pelo preco de
-     * venda cadastrado. O lucro real vive noutra coluna, somado a cada venda.
-     */
     public function recalcular(Pedido $pedido): Pedido
     {
-        // soma no banco em vez de hidratar as unidades: uma consulta so, e sem
-        // passar os decimais pelo cast do model
+        
         $totais = VariacaoProduto::query()
             ->doPedido($pedido->getKey())
             ->selectRaw('COALESCE(SUM(mon_custo), 0) as total')
@@ -112,6 +99,27 @@ final class PedidoService
 
         $pedido->mon_total = $this->somaMoeda((float) $totais->total);
         $pedido->mon_lucro_estimado = $this->somaMoeda((float) $totais->lucro);
+
+        $pedido->save();
+
+        return $pedido;
+    }
+
+    
+    public function recalcularLucroReal(Pedido $pedido): Pedido
+    {
+        $total = VendaVariacaoRel::query()
+            ->join('variacao_produto', 'variacao_produto.id', '=', 'venda_variacao_rel.fk_variacao_produto')
+            ->where('variacao_produto.fk_pedido', $pedido->getKey())
+            ->where('variacao_produto.deleted', '!=', 1)
+            ->selectRaw(
+                'COALESCE(SUM(venda_variacao_rel.mon_venda'
+                . ' - venda_variacao_rel.mon_desconto'
+                . ' - variacao_produto.mon_custo), 0) as lucro'
+            )
+            ->first();
+
+        $pedido->mon_lucro_real = $this->somaMoeda((float) $total->lucro);
 
         $pedido->save();
 
@@ -133,10 +141,7 @@ final class PedidoService
         return $pedido;
     }
 
-    /**
-     * Nome no formato C<ciclo>-<mes>-<sequencia no ciclo>, ex: C12-08-1.
-     * Nome digitado e respeitado; so o vazio e gerado.
-     */
+    
     private function nomeOuPadrao(Pedido $pedido): string
     {
         $nome = trim((string) $pedido->nome);
@@ -151,7 +156,6 @@ final class PedidoService
         return "C{$ciclo->num_ciclo}-{$mes}-{$this->sequenciaNoCiclo($pedido)}";
     }
 
-    /** Quantos pedidos aquele ciclo ja tem, mais este. */
     private function sequenciaNoCiclo(Pedido $pedido): int
     {
         return Pedido::query()

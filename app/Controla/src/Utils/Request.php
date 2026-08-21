@@ -52,6 +52,20 @@ final class Request
         return is_scalar($valor) ? (string) $valor : $default;
     }
 
+    /**
+     * @return list<array<string,mixed>>
+     */
+    public function linhas(string $campo): array
+    {
+        $valor = $this->corpo[$campo] ?? null;
+
+        if (!is_array($valor)) {
+            return [];
+        }
+
+        return array_values(array_filter($valor, 'is_array'));
+    }
+
     public function inteiroOuNulo(string $campo): ?int
     {
         $valor = $this->corpo[$campo] ?? $this->rota[$campo] ?? null;

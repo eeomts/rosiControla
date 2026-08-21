@@ -76,6 +76,45 @@ final class VendaService
     }
 
     /**
+     * @return list<array<string,mixed>>
+     */
+    public function estoqueParaVenda(?Venda $venda = null): array
+    {
+        $daVenda = $venda?->exists
+            ? VendaVariacaoRel::query()->daVenda($venda->getKey())->pluck('fk_variacao_produto')->all()
+            : [];
+
+        $unidades = VariacaoProduto::query()
+            ->with(['produto', 'ciclo'])
+            ->where(fn($query) => $query->where('vendido', 0)->orWhereIn('id', $daVenda))
+            ->orderBy('fk_produto')
+            ->orderBy('fk_ciclo')
+            ->get();
+
+        $grupos = [];
+
+        foreach ($unidades as $unidade) {
+            $chave = implode('|', [
+                $unidade->fk_produto, $unidade->fk_pedido, $unidade->fk_ciclo,
+                $unidade->mon_custo, $unidade->mon_venda, $unidade->data_validade?->format('Y-m-d'),
+            ]);
+
+            $grupos[$chave] ??= [
+                'produto' => (string) $unidade->produto?->nome,
+                'fk_produto' => (int) $unidade->fk_produto,
+                'ciclo' => (string) $unidade->ciclo?->nome,
+                'preco' => $this->somaMoeda((float) $unidade->mon_venda),
+                'validade' => $unidade->data_validade?->format('d/m/Y') ?? '',
+                'ids' => [],
+            ];
+
+            $grupos[$chave]['ids'][] = (int) $unidade->getKey();
+        }
+
+        return array_values($grupos);
+    }
+
+    /**
      * @throws RuntimeException Se o id nao aponta para uma venda.
      */
     public function encontrar(?int $id): Venda

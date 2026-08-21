@@ -134,7 +134,7 @@ final class VendaServiceTest extends TestCase
             ['fk_variacao_produto' => $barato->id],
         ]);
 
-        $descontos = $venda->itens->pluck('mon_desconto', 'fk_variacao_produto');
+        $descontos = $venda->itens->pluck('mon_desconto_rateio', 'fk_variacao_produto');
 
         $this->assertSame('6.00', $descontos[$caro->id]);
         $this->assertSame('2.00', $descontos[$barato->id]);
@@ -153,7 +153,7 @@ final class VendaServiceTest extends TestCase
 
         $this->assertSame(
             ['3.33', '3.33', '3.34'],
-            $venda->itens->pluck('mon_desconto')->all()
+            $venda->itens->pluck('mon_desconto_rateio')->all()
         );
         $this->assertSame('20.00', $venda->mon_total);
     }
@@ -166,7 +166,8 @@ final class VendaServiceTest extends TestCase
             ['fk_variacao_produto' => $unidade->id, 'mon_desconto' => '10,00'],
         ]);
 
-        $this->assertSame('15.00', $venda->itens->first()->mon_desconto);
+        $this->assertSame('10.00', $venda->itens->first()->mon_desconto);
+        $this->assertSame('5.00', $venda->itens->first()->mon_desconto_rateio);
         $this->assertSame('15.00', $venda->mon_total);
     }
 
@@ -432,6 +433,105 @@ final class VendaServiceTest extends TestCase
         ]);
     }
 
+    # ------------------------------------------------------ IDEMPOTENCIA
+
+    public function testSalvarDeNovoOMesmoFormularioNaoDescontaDuasVezes(): void
+    {
+        $itens = [
+            ['fk_variacao_produto' => $this->criarUnidade(['mon_venda' => '39.90'])->id],
+            ['fk_variacao_produto' => $this->criarUnidade(['mon_venda' => '26.90'])->id],
+        ];
+
+        $venda = $this->service->salvar(null, $this->dados(['mon_desconto' => '10,00']), $itens);
+        $primeiro = $venda->mon_total;
+
+        // e isto que o formulario de edicao devolve: o desconto PROPRIO do item
+        $comoOFormVolta = $venda->itens->map(fn($item): array => [
+            'fk_variacao_produto' => $item->fk_variacao_produto,
+            'mon_venda' => $item->mon_venda,
+            'mon_desconto' => $item->mon_desconto,
+        ])->all();
+
+        $reeditada = $this->service->salvar(
+            $venda->id,
+            $this->dados(['mon_desconto' => $venda->mon_desconto]),
+            $comoOFormVolta
+        );
+
+        $this->assertSame($primeiro, $reeditada->mon_total);
+    }
+
+    public function testReeditarNaoMexeNoLucroRealDoPedido(): void
+    {
+        $unidade = $this->criarUnidade(['mon_custo' => '10.00', 'mon_venda' => '30.00']);
+        $venda = $this->service->salvar(null, $this->dados(['mon_desconto' => '5,00']), [
+            ['fk_variacao_produto' => $unidade->id],
+        ]);
+
+        $antes = $this->pedido->fresh()->mon_lucro_real;
+
+        $this->service->salvar($venda->id, $this->dados(['mon_desconto' => '5,00']), [
+            ['fk_variacao_produto' => $unidade->id, 'mon_desconto' => '0,00'],
+        ]);
+
+        $this->assertSame($antes, $this->pedido->fresh()->mon_lucro_real);
+    }
+
+    public function testORateioNaoContaminaODescontoDoItem(): void
+    {
+        $unidade = $this->criarUnidade();
+
+        $venda = $this->service->salvar(null, $this->dados(['mon_desconto' => '6,00']), [
+            ['fk_variacao_produto' => $unidade->id, 'mon_desconto' => '4,00'],
+        ]);
+
+        $item = $venda->itens->first();
+
+        $this->assertSame('4.00', $item->mon_desconto);
+        $this->assertSame('6.00', $item->mon_desconto_rateio);
+        $this->assertSame('20.00', $venda->mon_total);
+    }
+    # ------------------------------------------------------------ ESTOQUE
+
+    public function testAgrupaUnidadesIdenticasNumaLinhaSo(): void
+    {
+        $this->criarUnidade();
+        $this->criarUnidade();
+        $this->criarUnidade();
+
+        $estoque = $this->service->estoqueParaVenda();
+
+        $this->assertCount(1, $estoque);
+        $this->assertCount(3, $estoque[0]['ids']);
+        $this->assertSame('Batom Una', $estoque[0]['produto']);
+    }
+
+    public function testSeparaOsGruposPorPreco(): void
+    {
+        $this->criarUnidade(['mon_venda' => '30.00']);
+        $this->criarUnidade(['mon_venda' => '25.00']);
+
+        $this->assertCount(2, $this->service->estoqueParaVenda());
+    }
+
+    public function testUnidadeVendidaSaiDoEstoque(): void
+    {
+        $unidade = $this->criarUnidade();
+        $this->service->salvar(null, $this->dados(), [['fk_variacao_produto' => $unidade->id]]);
+
+        $this->assertSame([], $this->service->estoqueParaVenda());
+    }
+
+    public function testNaEdicaoAsUnidadesDaPropriaVendaContinuamNaLista(): void
+    {
+        $unidade = $this->criarUnidade();
+        $venda = $this->service->salvar(null, $this->dados(), [['fk_variacao_produto' => $unidade->id]]);
+
+        $estoque = $this->service->estoqueParaVenda($venda);
+
+        $this->assertCount(1, $estoque);
+        $this->assertSame([$unidade->id], $estoque[0]['ids']);
+    }
     # ------------------------------------------------------------ APOIO
 
     /**

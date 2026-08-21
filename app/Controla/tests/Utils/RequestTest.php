@@ -136,4 +136,34 @@ final class RequestTest extends TestCase
             $_SERVER = $serverAnterior;
         }
     }
+
+    // --- linhas ---
+
+    public function testLinhasDevolveOArrayDeItens(): void
+    {
+        $request = new Request(corpo: ['itens' => [
+            ['fk_variacao_produto' => '7', 'mon_venda' => '30,00'],
+            ['fk_variacao_produto' => '8'],
+        ]]);
+
+        $this->assertCount(2, $request->linhas('itens'));
+        $this->assertSame('7', $request->linhas('itens')[0]['fk_variacao_produto']);
+    }
+
+    public function testLinhasDeCampoAusenteEhListaVazia(): void
+    {
+        $this->assertSame([], (new Request())->linhas('itens'));
+    }
+
+    public function testLinhasIgnoraCampoEscalar(): void
+    {
+        $this->assertSame([], (new Request(corpo: ['itens' => '7']))->linhas('itens'));
+    }
+
+    public function testLinhasDescartaOQueNaoEhLinhaEReindexa(): void
+    {
+        $request = new Request(corpo: ['itens' => [0 => ['id' => 1], 1 => 'lixo', 2 => ['id' => 3]]]);
+
+        $this->assertSame([['id' => 1], ['id' => 3]], $request->linhas('itens'));
+    }
 }

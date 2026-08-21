@@ -160,7 +160,10 @@ CREATE TABLE venda_variacao_rel (
   fk_venda INT UNSIGNED NOT NULL,
   fk_variacao_produto INT UNSIGNED NOT NULL,
   mon_venda DECIMAL(10,2) NOT NULL,
+  -- desconto que ela deu NESTE item (brinde = 100%)
   mon_desconto DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  -- a parte do desconto da venda inteira que coube a este item
+  mon_desconto_rateio DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   created DATETIME NULL,
   updated DATETIME NULL,
   deleted TINYINT(1) NOT NULL DEFAULT 0,

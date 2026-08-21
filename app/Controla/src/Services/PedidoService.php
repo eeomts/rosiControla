@@ -115,6 +115,7 @@ final class PedidoService
             ->selectRaw(
                 'COALESCE(SUM(venda_variacao_rel.mon_venda'
                 . ' - venda_variacao_rel.mon_desconto'
+                . ' - venda_variacao_rel.mon_desconto_rateio'
                 . ' - variacao_produto.mon_custo), 0) as lucro'
             )
             ->first();

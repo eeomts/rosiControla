@@ -8,8 +8,6 @@ use Cubo\Database\Db;
 use Illuminate\Database\Schema\Blueprint;
 
 /**
- * Tabelas montadas em memoria para os testes.
- *
  * @package Controla\Tests
  * @author Mateus - github.com/eeomts
  */
@@ -135,6 +133,7 @@ final class ControlaSchema
             $table->integer('fk_variacao_produto');
             $table->decimal('mon_venda', 10, 2);
             $table->decimal('mon_desconto', 10, 2)->default(0);
+            $table->decimal('mon_desconto_rateio', 10, 2)->default(0);
             $table->timestamp('created')->nullable();
             $table->timestamp('updated')->nullable();
             $table->integer('deleted')->default(0);

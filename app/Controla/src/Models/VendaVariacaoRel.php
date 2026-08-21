@@ -15,7 +15,7 @@ class VendaVariacaoRel extends Model
     protected $table = 'venda_variacao_rel';
 
     protected $fillable = [
-        'fk_venda', 'fk_variacao_produto', 'mon_venda', 'mon_desconto',
+        'fk_venda', 'fk_variacao_produto', 'mon_venda', 'mon_desconto', 'mon_desconto_rateio',
     ];
 
     protected $casts = [
@@ -23,6 +23,7 @@ class VendaVariacaoRel extends Model
         'fk_variacao_produto' => 'integer',
         'mon_venda' => 'decimal:2',
         'mon_desconto' => 'decimal:2',
+        'mon_desconto_rateio' => 'decimal:2',
     ];
 
     # -------------------------------------------------------------- RELACOES
@@ -46,9 +47,13 @@ class VendaVariacaoRel extends Model
 
     # ---------------------------------------------------------------- ESTADO
 
-    /** O que a cliente pagou por este item. */
     public function totalLiquido(): string
     {
-        return number_format((float) $this->mon_venda - (float) $this->mon_desconto, 2, '.', '');
+        return number_format(
+            (float) $this->mon_venda - (float) $this->mon_desconto - (float) $this->mon_desconto_rateio,
+            2,
+            '.',
+            ''
+        );
     }
 }

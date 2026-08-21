@@ -90,9 +90,6 @@ final class VendaService
     }
 
     /**
-     * Desfaz a venda: as unidades voltam ao estoque e o lucro real dos pedidos
-     * envolvidos encolhe de novo.
-     *
      * @throws RuntimeException Se o id nao aponta para uma venda.
      */
     public function excluir(?int $id): Venda
@@ -116,12 +113,9 @@ final class VendaService
      */
     private function gravar(Venda $venda, array $itens, array $unidades): Venda
     {
-        // a edicao refaz os itens do zero: o que estava na venda antiga volta
-        // para o estoque antes de o novo conjunto ser consumido
+        
         $pedidosTocados = $venda->exists ? $this->devolverAoEstoque($venda) : [];
 
-        // a devolucao gravou vendido = 0 por OUTRA instancia da mesma linha; sem
-        // recarregar, o Eloquent acha que a nossa ja esta em 1 e engole o UPDATE
         foreach ($unidades as $unidade) {
             $unidade->refresh();
         }
@@ -158,12 +152,7 @@ final class VendaService
     }
 
     /**
-     * Divide o desconto da venda entre os itens, proporcional ao que cada um
-     * ja custa, e SOMA ao desconto que o item porventura tenha.
-     *
-     * A sobra de centavos do arredondamento cai no ultimo item, senao a soma
-     * das partes nao fecha com o desconto que ela digitou.
-     *
+
      * @param list<VendaVariacaoRel> $linhas
      */
     private function ratear(float $desconto, array $linhas): void
@@ -184,7 +173,10 @@ final class VendaService
 
             $distribuido += $parte;
 
-            $linha->mon_desconto = $this->somaMoeda((float) $linha->mon_desconto + $parte);
+            // coluna separada: o mon_desconto continua sendo so o que ela deu
+            // NAQUELE item, entao reabrir a venda e salvar de novo cai no mesmo
+            // rateio em vez de descontar duas vezes
+            $linha->mon_desconto_rateio = $this->somaMoeda($parte);
             $linha->save();
         }
     }
@@ -204,8 +196,6 @@ final class VendaService
     }
 
     /**
-     * Solta as unidades da venda de volta no estoque e apaga os itens.
-     *
      * @return array<int,int> Ids dos pedidos que precisam de recalculo.
      */
     private function devolverAoEstoque(Venda $venda): array
@@ -243,8 +233,7 @@ final class VendaService
     }
 
     /**
-     * O preco sugerido e o da variacao, mas ela pode cobrar outro.
-     *
+
      * @param array<string,mixed> $item
      */
     private function precoDoItem(array $item, VariacaoProduto $unidade): string
@@ -336,8 +325,7 @@ final class VendaService
                 continue;
             }
 
-            // na edicao as unidades da propria venda continuam valendo, mesmo
-            // marcadas como vendidas
+        
             if ($unidade->vendido && !$this->ehDaVenda($venda, $id)) {
                 $erros[$campo] = 'Essa unidade ja foi vendida.';
 

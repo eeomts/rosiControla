@@ -3,8 +3,10 @@
 namespace Controla\Tests\Services;
 
 use Controla\Utils\Exceptions\DadosInvalidosException;
+use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
+use Controla\Models\VariacaoProduto;
 use Controla\Services\ProdutoService;
 use Controla\Tests\Support\ControlaSchema;
 use PHPUnit\Framework\TestCase;
@@ -133,6 +135,99 @@ final class ProdutoServiceTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->service->salvar(999, ['nome' => 'Batom']);
+    }
+
+    # ------------------------------------------------- LISTAR E EXCLUIR
+
+    public function testListaEmOrdemAlfabetica(): void
+    {
+        $this->service->salvar(null, ['nome' => 'Sabonete']);
+        $this->service->salvar(null, ['nome' => 'Batom']);
+        $this->service->salvar(null, ['nome' => 'Creme']);
+
+        $this->assertSame(
+            ['Batom', 'Creme', 'Sabonete'],
+            $this->service->listar()->pluck('nome')->all()
+        );
+    }
+
+    public function testFiltraPeloNomeOuPeloCodigo(): void
+    {
+        $this->service->salvar(null, ['nome' => 'Batom Una', 'codigo_produto' => 'B-100']);
+        $this->service->salvar(null, ['nome' => 'Creme Tododia', 'codigo_produto' => 'C-200']);
+
+        $this->assertCount(1, $this->service->listar('batom'));
+        $this->assertCount(1, $this->service->listar('C-200'));
+        $this->assertCount(2, $this->service->listar());
+    }
+
+    public function testEncontraPeloId(): void
+    {
+        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+
+        $this->assertSame($produto->id, $this->service->encontrar($produto->id)->id);
+    }
+
+    public function testEncontrarSemIdReclama(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $this->service->encontrar(null);
+    }
+
+    public function testExcluiSemApagarALinha(): void
+    {
+        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+
+        $excluido = $this->service->excluir($produto->id);
+
+        $this->assertTrue($excluido->trashed());
+        $this->assertCount(0, $this->service->listar());
+        $this->assertCount(1, Produto::withTrashed()->get());
+    }
+
+    /** Sem isto, a unidade ficaria apontando para um produto invisivel. */
+    public function testNaoExcluiProdutoComUnidadeCadastrada(): void
+    {
+        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+        $this->criarUnidade($produto);
+
+        $this->expectException(RegistroEmUsoException::class);
+
+        $this->service->excluir($produto->id);
+    }
+
+    public function testProdutoComUnidadeContinuaNaLista(): void
+    {
+        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+        $this->criarUnidade($produto);
+
+        try {
+            $this->service->excluir($produto->id);
+        } catch (RegistroEmUsoException) {
+            // o que importa e o produto ter sobrevivido
+        }
+
+        $this->assertCount(1, $this->service->listar());
+    }
+
+    public function testExcluirIdInexistenteReclama(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $this->service->excluir(999);
+    }
+
+    private function criarUnidade(Produto $produto): VariacaoProduto
+    {
+        return VariacaoProduto::create([
+            'fk_produto' => $produto->id,
+            'fk_pedido' => 1,
+            'fk_ciclo' => 1,
+            'mon_custo' => '10.00',
+            'mon_venda' => '30.00',
+            'vendido' => 0,
+        ]);
     }
 
     /**

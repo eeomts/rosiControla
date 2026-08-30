@@ -3,8 +3,11 @@
 namespace Controla\Services;
 
 use Controla\Utils\Exceptions\DadosInvalidosException;
+use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
+use Controla\Models\VariacaoProduto;
+use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
 /**
@@ -46,19 +49,56 @@ final class ProdutoService
         return $this->salvar(null, ['nome' => $nome]);
     }
 
-    private function encontrarOuCriar(?int $id): Produto
+    /**
+     * @param string|null $termo Filtra por nome ou codigo; vazio traz todos.
+     * @return Collection<int,Produto>
+     */
+    public function listar(?string $termo = null): Collection
     {
-        if ($id === null) {
-            return new Produto();
-        }
+        return Produto::query()->busca((string) $termo)->ordenado()->get();
+    }
 
-        $produto = Produto::findById($id);
+    /**
+     * @throws RuntimeException Se o id nao aponta para um produto.
+     */
+    public function encontrar(?int $id): Produto
+    {
+        $produto = $id === null ? null : Produto::findById($id);
 
         if ($produto === null) {
-            throw new RuntimeException("Produto {$id} nao encontrado.");
+            throw new RuntimeException('Produto ' . ($id ?? '?') . ' nao encontrado.');
         }
 
         return $produto;
+    }
+
+    /**
+     * Excluir a base derrubaria o nome das unidades que vieram dela, entao um
+     * produto com variacao cadastrada nao sai.
+     *
+     * @throws RuntimeException Se o id nao aponta para um produto.
+     * @throws RegistroEmUsoException Se o produto ja tem unidades.
+     */
+    public function excluir(?int $id): Produto
+    {
+        $produto = $this->encontrar($id);
+
+        $unidades = VariacaoProduto::query()->doProduto((int) $produto->getKey())->count();
+
+        if ($unidades > 0) {
+            throw RegistroEmUsoException::porque(
+                "{$produto->nome} tem {$unidades} unidade(s) em pedidos e nao pode ser excluido."
+            );
+        }
+
+        $produto->delete();
+
+        return $produto;
+    }
+
+    private function encontrarOuCriar(?int $id): Produto
+    {
+        return $id === null ? new Produto() : $this->encontrar($id);
     }
 
     /**

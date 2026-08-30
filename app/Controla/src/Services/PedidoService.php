@@ -6,10 +6,12 @@ use Controla\Models\Ciclo;
 use Controla\Utils\Concerns\NormalizaDatas;
 use Controla\Utils\Concerns\NormalizaMoeda;
 use Controla\Utils\Exceptions\DadosInvalidosException;
+use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Models\Pedido;
 use Controla\Models\VariacaoProduto;
 use Controla\Models\VendaVariacaoRel;
 use Controla\Models\Produto;
+use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
 /**
@@ -77,8 +79,15 @@ final class PedidoService
         return $unidades;
     }
 
+    /**
+     * @throws RegistroEmUsoException Se a unidade ja saiu numa venda.
+     */
     public function removerUnidade(VariacaoProduto $unidade): void
     {
+        if ($unidade->vendido) {
+            throw RegistroEmUsoException::porque('Essa unidade ja foi vendida e nao pode sair do pedido.');
+        }
+
         $pedido = $unidade->pedido;
 
         $unidade->delete();
@@ -86,6 +95,121 @@ final class PedidoService
         if ($pedido !== null) {
             $this->recalcular($pedido);
         }
+    }
+
+    /**
+     * @throws RuntimeException Se o id nao aponta para uma unidade.
+     */
+    public function encontrarUnidade(?int $id): VariacaoProduto
+    {
+        $unidade = $id === null ? null : VariacaoProduto::findById($id);
+
+        if ($unidade === null) {
+            throw new RuntimeException('Unidade ' . ($id ?? '?') . ' nao encontrada.');
+        }
+
+        return $unidade;
+    }
+
+    /**
+     * @return Collection<int,Pedido>
+     */
+    public function listar(): Collection
+    {
+        return Pedido::query()->maisRecente()->get();
+    }
+
+    /**
+     * @throws RuntimeException Se o id nao aponta para um pedido.
+     */
+    public function encontrar(?int $id): Pedido
+    {
+        $pedido = $id === null ? null : Pedido::findById($id);
+
+        if ($pedido === null) {
+            throw new RuntimeException('Pedido ' . ($id ?? '?') . ' nao encontrado.');
+        }
+
+        return $pedido;
+    }
+
+    /**
+     * Leva junto as unidades que entraram por ele -- um pedido cadastrado
+     * errado sai inteiro, sem ela ter de tirar unidade por unidade.
+     *
+     * Unidade ja vendida segura o pedido: a venda aponta para ela.
+     *
+     * @throws RuntimeException Se o id nao aponta para um pedido.
+     * @throws RegistroEmUsoException Se alguma unidade ja foi vendida.
+     */
+    public function excluir(?int $id): Pedido
+    {
+        $pedido = $this->encontrar($id);
+
+        $vendidas = VariacaoProduto::query()
+            ->doPedido((int) $pedido->getKey())
+            ->where('vendido', 1)
+            ->count();
+
+        if ($vendidas > 0) {
+            throw RegistroEmUsoException::porque(
+                "{$pedido->nome} tem {$vendidas} unidade(s) ja vendida(s) e nao pode ser excluido."
+            );
+        }
+
+        foreach (VariacaoProduto::query()->doPedido((int) $pedido->getKey())->get() as $unidade) {
+            $unidade->delete();
+        }
+
+        $pedido->delete();
+
+        return $pedido;
+    }
+
+    /**
+     * As unidades do pedido agrupadas por dados identicos, para a tela mostrar
+     * "3 x Batom" em vez de tres linhas iguais.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function unidadesAgrupadas(Pedido $pedido): array
+    {
+        $unidades = VariacaoProduto::query()
+            ->with('produto')
+            ->doPedido((int) $pedido->getKey())
+            ->orderBy('fk_produto')
+            ->get();
+
+        $grupos = [];
+
+        foreach ($unidades as $unidade) {
+            $chave = implode('|', [
+                $unidade->fk_produto, $unidade->mon_custo, $unidade->mon_venda,
+                $unidade->data_validade?->format('Y-m-d'),
+            ]);
+
+            $grupos[$chave] ??= [
+                'produto' => (string) $unidade->produto?->nome,
+                'custo' => $this->somaMoeda((float) $unidade->mon_custo),
+                'venda' => $this->somaMoeda((float) $unidade->mon_venda),
+                'validade' => $unidade->data_validade?->format('d/m/Y') ?? '',
+                'ids' => [],
+                // separado porque a vendida pode ser qualquer uma do grupo, nao
+                // as primeiras -- e a tela precisa de UMA que ainda saia
+                'disponiveis' => [],
+                'vendidas' => 0,
+            ];
+
+            $grupos[$chave]['ids'][] = (int) $unidade->getKey();
+
+            if ($unidade->vendido) {
+                $grupos[$chave]['vendidas']++;
+            } else {
+                $grupos[$chave]['disponiveis'][] = (int) $unidade->getKey();
+            }
+        }
+
+        return array_values($grupos);
     }
 
     public function recalcular(Pedido $pedido): Pedido

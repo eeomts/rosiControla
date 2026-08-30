@@ -4,6 +4,7 @@ namespace Controla\Tests\Services;
 
 use Controla\Models\Ciclo;
 use Controla\Utils\Exceptions\DadosInvalidosException;
+use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Models\Pedido;
 use Controla\Models\VariacaoProduto;
 use Controla\Services\PedidoService;
@@ -272,6 +273,143 @@ final class PedidoServiceTest extends TestCase
             'fk_ciclo' => $this->ciclo->id,
             'data_pedido' => '05/08/2026',
         ];
+    }
+
+    # ------------------------------------------------- LISTAR E EXCLUIR
+
+    public function testListaDoMaisRecenteParaOMaisAntigo(): void
+    {
+        $this->service->salvar(null, $this->dados(['data_pedido' => '05/08/2026']));
+        $this->service->salvar(null, $this->dados(['data_pedido' => '15/08/2026']));
+
+        $this->assertSame(
+            ['2026-08-15', '2026-08-05'],
+            $this->service->listar()->map(fn(Pedido $p) => $p->data_pedido->format('Y-m-d'))->all()
+        );
+    }
+
+    public function testEncontraPeloId(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+
+        $this->assertSame($pedido->id, $this->service->encontrar($pedido->id)->id);
+    }
+
+    public function testEncontrarSemIdReclama(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $this->service->encontrar(null);
+    }
+
+    /** Pedido cadastrado errado sai inteiro, sem tirar unidade por unidade. */
+    public function testExcluirLevaAsUnidadesJunto(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $this->service->adicionarProduto($pedido, $this->itens(['quantidade' => 3]));
+
+        $excluido = $this->service->excluir($pedido->id);
+
+        $this->assertTrue($excluido->trashed());
+        $this->assertCount(0, VariacaoProduto::getRecords());
+        $this->assertCount(3, VariacaoProduto::withTrashed()->get());
+    }
+
+    public function testNaoExcluiPedidoComUnidadeJaVendida(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $unidades = $this->service->adicionarProduto($pedido, $this->itens(['quantidade' => 2]));
+
+        $unidades[0]->vendido = 1;
+        $unidades[0]->save();
+
+        $this->expectException(RegistroEmUsoException::class);
+
+        $this->service->excluir($pedido->id);
+    }
+
+    public function testPedidoComUnidadeVendidaContinuaInteiro(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $unidades = $this->service->adicionarProduto($pedido, $this->itens(['quantidade' => 2]));
+
+        $unidades[0]->vendido = 1;
+        $unidades[0]->save();
+
+        try {
+            $this->service->excluir($pedido->id);
+        } catch (RegistroEmUsoException) {
+            // o que importa e nada ter sumido
+        }
+
+        $this->assertCount(1, $this->service->listar());
+        $this->assertCount(2, VariacaoProduto::getRecords());
+    }
+
+    public function testNaoRemoveUnidadeJaVendida(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $unidades = $this->service->adicionarProduto($pedido, $this->itens());
+
+        $unidades[0]->vendido = 1;
+        $unidades[0]->save();
+
+        $this->expectException(RegistroEmUsoException::class);
+
+        $this->service->removerUnidade($unidades[0]->fresh());
+    }
+
+    public function testEncontraAUnidadePeloId(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $unidades = $this->service->adicionarProduto($pedido, $this->itens());
+
+        $this->assertSame($unidades[0]->id, $this->service->encontrarUnidade($unidades[0]->id)->id);
+    }
+
+    public function testEncontrarUnidadeInexistenteReclama(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $this->service->encontrarUnidade(999);
+    }
+
+    # ----------------------------------------------- UNIDADES AGRUPADAS
+
+    public function testAgrupaAsUnidadesIdenticasDoPedido(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $this->service->adicionarProduto($pedido, $this->itens(['quantidade' => 3]));
+
+        $grupos = $this->service->unidadesAgrupadas($pedido);
+
+        $this->assertCount(1, $grupos);
+        $this->assertCount(3, $grupos[0]['ids']);
+        $this->assertSame('Batom Vermelho', $grupos[0]['produto']);
+        $this->assertSame(0, $grupos[0]['vendidas']);
+    }
+
+    public function testSeparaOsGruposQuandoOPrecoMuda(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $this->service->adicionarProduto($pedido, $this->itens(['mon_venda' => '25,00']));
+        $this->service->adicionarProduto($pedido, $this->itens(['mon_venda' => '30,00']));
+
+        $this->assertCount(2, $this->service->unidadesAgrupadas($pedido));
+    }
+
+    public function testContaQuantasDoGrupoJaForamVendidas(): void
+    {
+        $pedido = $this->service->salvar(null, $this->dados());
+        $unidades = $this->service->adicionarProduto($pedido, $this->itens(['quantidade' => 3]));
+
+        $unidades[0]->vendido = 1;
+        $unidades[0]->save();
+
+        $grupos = $this->service->unidadesAgrupadas($pedido);
+
+        $this->assertSame(1, $grupos[0]['vendidas']);
+        $this->assertCount(3, $grupos[0]['ids']);
     }
 
     /**

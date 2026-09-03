@@ -19,6 +19,9 @@ services:
       - ./app/Controla/src:/var/www/html/app/Controla/src
       - ./app/Controla/views:/var/www/html/app/Controla/views
       - ./app/Cubo2/src:/var/www/html/app/Cubo2/src
+      # o index.php roda AQUI, no php-fpm -- montar public/ so no nginx
+      # faz o dev servir asset novo com front controller velho
+      - ./public:/var/www/html/public:ro
       - ./data/logs:/var/www/html/app/Controla/logs
 
   web:

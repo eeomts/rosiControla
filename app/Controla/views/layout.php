@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $view->escape('titulo') ?> - <?= $view->escape('sistema') ?></title>
+    <link rel="icon" href="/favicon.ico" sizes="16x16">
     <link rel="stylesheet" href="/css/app.css">
     <!-- os componentes ANTES do alpine: eles se registram no alpine:init, que o
          proprio alpine dispara ao rodar. defer roda na ordem do documento. -->

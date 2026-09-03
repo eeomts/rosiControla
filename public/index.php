@@ -8,8 +8,10 @@ use Cubo\Config;
 use Cubo\Controller;
 use Cubo\Cubo;
 use Cubo\Database\Db;
-use Cubo\ErrorHandler;
+use Cubo\Exceptions\ControllerNotFoundException;
 use Cubo\Logging\FileLogger;
+use Cubo\ErrorHandler;
+use Cubo\Routing\Route;
 use Cubo\Routing\Router;
 
 $raiz = dirname(__DIR__);
@@ -47,4 +49,16 @@ Controller::setDefaultViewFactory(fn() => DefaultView::getInstance());
 
 Db::getInstance()->connectFromConfig();
 
-$cubo->dispatch($router->parseUrl());
+$rota = $router->parseUrl();
+
+try {
+    $cubo->dispatch($rota);
+} catch (ControllerNotFoundException) {
+    // A URL nao aponta para feature nenhuma. O Cubo faz a parte dele -- sinaliza
+    // com uma excecao tipada -- e para por ai de proposito: traduzir isso em um
+    // status HTTP e em uma pagina exige conhecer o layout da app, que o
+    // framework nao pode nomear. Por isso o 404 mora aqui, e nao no Cubo.
+    http_response_code(404);
+
+    $cubo->dispatch(new Route('erro', 'index', ['caminho' => $rota->controller]));
+}

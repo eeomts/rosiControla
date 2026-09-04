@@ -45,3 +45,31 @@ user = ""
 pass = ""
 charset = utf8mb4
 collation = utf8mb4_unicode_ci
+
+[app]
+; Namespace dos controladores resolvidos pela CONVENCAO (/controlador/acao).
+; Rota declarada em routing/routes.php traz o FQCN e nao passa por aqui.
+controllers = Controla\Controllers\
+
+; View padrao injetada em todo controlador que nao recebe uma.
+view = Controla\Views\DefaultView
+
+; Raiz dos templates, relativa a raiz do projeto. Aceita varias, em ordem.
+templates = templates/
+
+; Tabela de rotas declaradas; consultada ANTES da convencao.
+routes = routing/routes.php
+
+; Onde o `cubo migrate` procura as migrations.
+migrations = database/migrations
+
+timezone = America/Sao_Paulo
+charset = UTF-8
+
+; Usado so fora de development: o ErrorHandler escreve aqui.
+log = storage/logs/erro.log
+
+; Em producao o nginx do host termina o TLS, entao o PHP nao ve HTTPS: sem esta
+; chave o Request::scheme() responderia 'http'. Ligar SO com proxy na frente --
+; sem ele, o X-Forwarded-Proto e forjavel por qualquer cliente.
+trusted_proxy = 1

@@ -7,17 +7,13 @@
          failOnWarning="true"
          failOnRisky="true">
     <testsuites>
-        <testsuite name="Cubo">
-            <directory>app/Cubo2/tests/Unit</directory>
-        </testsuite>
         <testsuite name="Controla">
-            <directory>app/Controla/tests</directory>
+            <directory>tests</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
-            <directory>app/Cubo2/src</directory>
-            <directory>app/Controla/src</directory>
+            <directory>src</directory>
         </include>
     </source>
 </phpunit>

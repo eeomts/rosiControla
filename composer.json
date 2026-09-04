@@ -3,20 +3,18 @@
     "description": "Controla - controle de estoque e financeiro (Cubo Framework)",
     "require": {
         "php": ">=8.2",
-        "illuminate/database": "^11.0",
-        "mpdf/mpdf": "^8.2"
+        "ext-mbstring": "*",
+        "illuminate/database": "^11.0"
     },
     "autoload": {
         "psr-4": {
-            "Cubo\\": "app/Cubo2/src/",
-            "PHPMailer\\PHPMailer\\": "app/Cubo2/PHPMailer/src/",
-            "Controla\\": "app/Controla/src/"
+            "Cubo\\": "cubo/src/",
+            "Controla\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Cubo\\Tests\\": "app/Cubo2/tests/",
-            "Controla\\Tests\\": "app/Controla/tests/"
+            "Controla\\Tests\\": "tests/"
         }
     },
     "require-dev": {
@@ -24,5 +22,10 @@
     },
     "scripts": {
         "test": "phpunit"
+    },
+    "config": {
+        "allow-plugins": {
+            "kylekatarnls/update-helper": false
+        }
     }
 }

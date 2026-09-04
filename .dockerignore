@@ -1,22 +1,24 @@
-# O docker NAO le o .gitignore -- sem este arquivo, o COPY app/ levaria o
+# O docker NAO le o .gitignore -- sem este arquivo, o COPY levaria o
 # config.ini local (com as credenciais da maquina) para dentro da imagem.
 
 # segredos: nunca dentro da imagem
 .env
-app/Controla/config/config.ini
+config/config.ini
 deploy/config.ini
+deploy/dev/config.ini
 
 # dados e artefatos do host
 data/
 vendor/
 .phpunit.cache/
 *.log
-app/Controla/logs/
+storage/logs/
 
 # nao servem em producao
-app/Controla/tests/
-app/Cubo2/tests/
+tests/
 phpunit.xml
+router-dev.php
 TODO/
+app/
 .git/
 .claude/

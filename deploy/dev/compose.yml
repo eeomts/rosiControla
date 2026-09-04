@@ -13,16 +13,17 @@ services:
 
   app:
     volumes:
-      - ./deploy/dev/config.ini:/var/www/html/app/Controla/config/config.ini:ro
+      - ./deploy/dev/config.ini:/var/www/html/config/config.ini:ro
       - ./deploy/dev/php.ini:/usr/local/etc/php/conf.d/controla.ini:ro
 
-      - ./app/Controla/src:/var/www/html/app/Controla/src
-      - ./app/Controla/views:/var/www/html/app/Controla/views
-      - ./app/Cubo2/src:/var/www/html/app/Cubo2/src
+      - ./src:/var/www/html/src
+      - ./templates:/var/www/html/templates
+      - ./routing:/var/www/html/routing
+      - ./cubo/src:/var/www/html/cubo/src
       # o index.php roda AQUI, no php-fpm -- montar public/ so no nginx
       # faz o dev servir asset novo com front controller velho
       - ./public:/var/www/html/public:ro
-      - ./data/logs:/var/www/html/app/Controla/logs
+      - ./data/logs:/var/www/html/storage/logs
 
   web:
 

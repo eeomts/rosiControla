@@ -39,3 +39,26 @@ port = 3306
 db = rosi_controla
 user = ""
 pass = ""
+
+[app]
+; Namespace dos controladores resolvidos pela CONVENCAO (/controlador/acao).
+; Rota declarada em routing/routes.php traz o FQCN e nao passa por aqui.
+controllers = Controla\Controllers\
+
+; View padrao injetada em todo controlador que nao recebe uma.
+view = Controla\Views\DefaultView
+
+; Raiz dos templates, relativa a raiz do projeto. Aceita varias, em ordem.
+templates = templates/
+
+; Tabela de rotas declaradas; consultada ANTES da convencao.
+routes = routing/routes.php
+
+; Onde o `cubo migrate` procura as migrations.
+migrations = database/migrations
+
+timezone = America/Sao_Paulo
+charset = UTF-8
+
+; Usado so fora de development: o ErrorHandler escreve aqui.
+log = storage/logs/erro.log

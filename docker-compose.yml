@@ -32,8 +32,8 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./deploy/config.ini:/var/www/html/app/Controla/config/config.ini:ro
-      - ./data/logs:/var/www/html/app/Controla/logs
+      - ./deploy/config.ini:/var/www/html/config/config.ini:ro
+      - ./data/logs:/var/www/html/storage/logs
 
   web:
     build:

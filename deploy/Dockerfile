@@ -8,7 +8,8 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist \
     --no-interaction --ignore-platform-reqs
 
-COPY app/ app/
+COPY cubo/ cubo/
+COPY src/ src/
 COPY public/ public/
 RUN composer dump-autoload --optimize --no-dev
 
@@ -27,12 +28,15 @@ COPY deploy/php/php.ini /usr/local/etc/php/conf.d/controla.ini
 WORKDIR /var/www/html
 
 COPY --from=deps /app/vendor/ vendor/
-COPY app/ app/
+COPY cubo/ cubo/
+COPY src/ src/
+COPY templates/ templates/
+COPY routing/ routing/
 COPY public/ public/
 COPY database/ database/
 
 
-RUN mkdir -p app/Controla/logs && chown -R www-data:www-data app/Controla/logs
+RUN mkdir -p storage/logs && chown -R www-data:www-data storage/logs
 
 # o config.ini NAO entra na imagem: vem por bind mount, com as senhas de verdade
 

@@ -1,0 +1,58 @@
+; Copie para config.ini e ajuste.
+; user e pass ficam ofuscados: Cubo\Tools\Str::cuboEncode('valor') gera, o Db decodifica.
+
+[cubo]
+location = local
+host.local = http://localhost/
+host.wan = https://SEU-DOMINIO/
+enviroment = development
+servidor = LOCAL
+versao = V1
+table_prefix =
+database_prefix =
+path_prefix =
+redir =
+url_login =
+
+[database.local]
+; dbtype = mariadb usa o driver nativo do illuminate 11 (MariaDbConnector)
+; charset/collation sao opcionais; sem eles o Db assume utf8mb4
+dbtype = mariadb
+host = localhost
+port = 3306
+db = 
+user = "Y205dmRBPT0="
+pass = ""
+
+[database.wan]
+; dbtype = mariadb usa o driver nativo do illuminate 11 (MariaDbConnector)
+; charset/collation sao opcionais; sem eles o Db assume utf8mb4
+dbtype = mariadb
+host = 127.0.0.1
+port = 3306
+db = 
+user = ""
+pass = ""
+
+[app]
+; Namespace dos controladores resolvidos pela CONVENCAO (/controlador/acao).
+; Rota declarada em routing/routes.php traz o FQCN e nao passa por aqui.
+controllers = Controla\Controllers\
+
+; View padrao injetada em todo controlador que nao recebe uma.
+view = Controla\Views\DefaultView
+
+; Raiz dos templates, relativa a raiz do projeto. Aceita varias, em ordem.
+templates = templates/
+
+; Tabela de rotas declaradas; consultada ANTES da convencao.
+routes = routing/routes.php
+
+; Onde o `cubo migrate` procura as migrations.
+migrations = database/migrations
+
+timezone = America/Sao_Paulo
+charset = UTF-8
+
+; Usado so fora de development: o ErrorHandler escreve aqui.
+log = storage/logs/erro.log

@@ -1,8 +1,7 @@
 /vendor/
 /.phpunit.cache/
-/app/config.ini
-/app/logs/
-/app/Controla/public/upload/
+/storage/logs/
+/public/uploads/
 *.log
 .DS_Store
 Thumbs.db

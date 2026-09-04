@@ -1,13 +1,6 @@
 <?php
 
-/**
- * O catalogo e o estoque.
- *
- * `produto` e a BASE: catalogo estavel, nao muda entre ciclos.
- * `variacao_produto` e UMA LINHA POR UNIDADE FISICA -- tres batons iguais no
- * mesmo pedido sao tres linhas. E o que permite vender uma e manter as outras
- * disponiveis sem controlar quantidade em coluna.
- */
+
 
 declare(strict_types=1);
 

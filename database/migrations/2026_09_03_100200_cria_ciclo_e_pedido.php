@@ -1,16 +1,6 @@
 <?php
 
-/**
- * O topo da hierarquia: CICLO -> PEDIDO.
- *
- * As duas ficam na mesma migration porque o pedido nao existe sem o ciclo -- a
- * FK amarra as duas, e separa-las so criaria um lote em que o rollback do
- * primeiro arquivo falharia por causa do segundo.
- *
- * mon_total, mon_lucro_estimado e mon_lucro_real sao DENORMALIZADAS: quem as
- * mantem e o PedidoService::recalcular(). Escrever unidade fora do service
- * deixa o total mentiroso.
- */
+
 
 declare(strict_types=1);
 

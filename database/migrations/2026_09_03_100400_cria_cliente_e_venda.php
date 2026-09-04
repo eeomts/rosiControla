@@ -1,17 +1,6 @@
 <?php
 
-/**
- * A venda e o que ela liga.
- *
- * A venda pertence ao CLIENTE, nunca a um ciclo ou pedido: a mesma venda pode
- * levar unidades compradas em ciclos diferentes.
- *
- * `venda_variacao_rel` guarda TRES valores de dinheiro de proposito:
- * mon_venda (o preco cobrado no item), mon_desconto (o que ela deu naquele
- * item -- brinde e 100%) e mon_desconto_rateio (a parte do desconto da venda
- * inteira que coube a este item). Separados porque juntos o desconto era
- * descontado duas vezes ao reeditar a venda.
- */
+
 
 declare(strict_types=1);
 

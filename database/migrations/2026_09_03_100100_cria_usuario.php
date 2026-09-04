@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Login. A tabela existe desde o schema.sql, mas ainda nao ha codigo usando --
- * a feature de acesso e trabalho futuro.
- */
 
 declare(strict_types=1);
 

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * A aba Contas. A tabela existe desde o schema.sql; a feature ainda nao, entao
- * hoje o link /conta do menu cai no 404 de proposito.
- */
-
 declare(strict_types=1);
 
 use Cubo\Database\Migrations\Migration;

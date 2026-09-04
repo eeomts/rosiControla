@@ -3,11 +3,12 @@
 namespace Cubo\Http;
 
 use Cubo\Storage\UploadedFile;
+use Cubo\Validation\Sanitizer;
 use Cubo\Validation\Validator;
 use Cubo\Validation\ValidationException;
 
 /**
- * Encapsulação de $_SERVER, $_GET, $_POST, $_FILES.
+ * Encapsulacao de $_SERVER, $_GET, $_POST, $_FILES.
  *
  * @package Cubo
  */
@@ -16,7 +17,6 @@ class Request
     /** Cabecalhos que o PHP entrega sem o prefixo HTTP_ (heranca do CGI). */
     private const CABECALHOS_SEM_PREFIXO = ['CONTENT_TYPE', 'CONTENT_LENGTH'];
 
-    /** Verbos que um POST pode assumir via _method. */
     private const VERBOS_SPOOFAVEIS = ['PUT', 'PATCH', 'DELETE'];
 
     private array $server;
@@ -27,11 +27,7 @@ class Request
     /** @var array<string, mixed> preenchido pelos middlewares */
     private array $attributes = [];
 
-    /**
-     * @param bool $trustProxy libera a leitura de X-Forwarded-Proto. Desligado
-     *                         por padrao: sem proxy na frente, qualquer cliente
-     *                         forja o cabecalho.
-     */
+    /** @param bool $trustProxy sem proxy na frente qualquer cliente forja o X-Forwarded-Proto */
     public function __construct(
         ?array $server = null,
         ?array $get = null,
@@ -45,12 +41,7 @@ class Request
         $this->files = $files ?? $_FILES;
     }
 
-    /**
-     * Verbo HTTP da requisicao.
-     *
-     * Formulario HTML so fala GET e POST, entao um POST com o campo _method
-     * assume PUT, PATCH ou DELETE. So o POST destrava, e so nesses tres verbos.
-     */
+    /** Formulario so fala GET e POST: um POST com _method assume PUT, PATCH ou DELETE. */
     public function method(): string
     {
         $metodo = strtoupper($this->server['REQUEST_METHOD'] ?? 'GET');
@@ -91,42 +82,33 @@ class Request
         return $this->method() === 'PATCH';
     }
 
-    /** Valor de uma chave em $_POST, ou todo $_POST. */
     public function post(string $key = null): mixed
     {
         return $key === null ? $this->post : ($this->post[$key] ?? null);
     }
 
-    /** Valor de uma chave em $_GET, ou todo $_GET. */
     public function get(string $key = null): mixed
     {
         return $key === null ? $this->get : ($this->get[$key] ?? null);
     }
 
-    /** Busca em $_POST ou $_GET (POST leva prioridade). */
+    /** POST leva prioridade. */
     public function input(string $key): mixed
     {
         return $this->post[$key] ?? $this->get[$key] ?? null;
     }
 
-    /** Todos os parametros ($_GET + $_POST). */
     public function all(): array
     {
         return array_merge($this->get, $this->post);
     }
 
-    /** Verifica se uma chave existe em POST ou GET. */
     public function has(string $key): bool
     {
         return isset($this->post[$key]) || isset($this->get[$key]);
     }
 
-    /**
-     * Arquivo enviado, ja validado.
-     *
-     * @throws \Cubo\Exceptions\StorageException se o PHP reportou erro no upload
-     *         (arquivo grande demais, por exemplo), que antes chegava mudo
-     */
+    /** @throws \Cubo\Exceptions\StorageException se o PHP reportou erro no upload */
     public function file(string $key): ?UploadedFile
     {
         $entrada = $this->files[$key] ?? null;
@@ -134,13 +116,11 @@ class Request
         return is_array($entrada) ? UploadedFile::fromPhpUpload($entrada) : null;
     }
 
-    /** Header HTTP enviado pelo cliente. */
     public function header(string $name): ?string
     {
         $chave = strtoupper(str_replace('-', '_', $name));
 
-        // lista fechada: sem ela, header('Request-Method') leria REQUEST_METHOD
-        // e o metodo viraria porta de entrada para o $_SERVER inteiro
+        # lista fechada: sem ela header('Request-Method') leria REQUEST_METHOD e abriria o $_SERVER inteiro
         if (in_array($chave, self::CABECALHOS_SEM_PREFIXO, true)) {
             return $this->server[$chave] ?? null;
         }
@@ -148,40 +128,34 @@ class Request
         return $this->server['HTTP_' . $chave] ?? null;
     }
 
-    /** Authorization header (ex: "Bearer token" ou "Basic base64"). */
     public function authorization(): ?string
     {
-        // Apache com mod_php nao repassa o Authorization; com rewrite ele
-        // reaparece prefixado de REDIRECT_
+        # Apache com mod_php nao repassa o Authorization; com rewrite ele volta prefixado de REDIRECT_
         return $this->header('Authorization')
             ?? $this->server['REDIRECT_HTTP_AUTHORIZATION']
             ?? null;
     }
 
-    /** Caminho da requisicao (sem query string). */
+    /** Sem query string. */
     public function path(): string
     {
         $uri = $this->server['REQUEST_URI'] ?? '/';
         return (string) parse_url($uri, PHP_URL_PATH) ?: '/';
     }
 
-    /** Query string completa. */
     public function queryString(): string
     {
         return $this->server['QUERY_STRING'] ?? '';
     }
 
-    /** Host do cliente (ex: "localhost:8080"). */
     public function host(): string
     {
         return $this->server['HTTP_HOST'] ?? $this->server['SERVER_NAME'] ?? '';
     }
 
     /**
-     * Protocolo (http ou https).
-     *
-     * Atras de um proxy que termina TLS o PHP nao recebe HTTPS, e o protocolo
-     * real so chega no X-Forwarded-Proto -- lido apenas com trustProxy ligado.
+     * Atras de proxy que termina TLS o PHP nao recebe HTTPS: o protocolo real so
+     * chega no X-Forwarded-Proto, lido apenas com trustProxy ligado.
      */
     public function scheme(): string
     {
@@ -189,7 +163,7 @@ class Request
             $encaminhado = $this->header('X-Forwarded-Proto');
 
             if ($encaminhado !== null && trim($encaminhado) !== '') {
-                // cadeia de proxies manda lista; o primeiro e o do cliente
+                # cadeia de proxies manda lista; o primeiro e o do cliente
                 return strtolower(trim(explode(',', $encaminhado)[0]));
             }
         }
@@ -201,24 +175,19 @@ class Request
         return 'http';
     }
 
-    /** URL completa da requisicao. */
     public function url(): string
     {
         return $this->scheme() . '://' . $this->host() . $this->path();
     }
 
-    /** IP do cliente. */
     public function ip(): string
     {
         return $this->server['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 
     /**
-     * Copia da requisicao com mais um atributo. E como o middleware entrega
-     * dado ao controlador (o usuario autenticado, por exemplo).
-     *
-     * Devolve copia em vez de mutar: quem ja tem a requisicao em maos nao muda
-     * de comportamento porque um middleware mexeu nela depois.
+     * Como o middleware entrega dado ao controlador. Devolve copia em vez de
+     * mutar: quem ja tem a requisicao em maos nao muda de comportamento depois.
      */
     public function withAttribute(string $name, mixed $value): static
     {
@@ -240,9 +209,26 @@ class Request
     }
 
     /**
-     * Valida os dados da requisicao e devolve o que passou.
+     * Ao contrario do validate(), devolve o array INTEIRO: sanitizar dois campos
+     * de dez nao pode sumir com os outros oito.
      *
-     * Nao guarda estado: a requisicao segue imutavel, e quem precisa dos dados
+     * @param array<string, string> $rules chave => 'trim|money'
+     * @throws ValidationException se algum campo nao puder ser normalizado
+     * @return array<string, mixed> todos os dados, com os declarados normalizados
+     */
+    public function sanitize(array $rules): array
+    {
+        $sanitizer = new Sanitizer(array_merge($this->get, $this->post), $rules);
+
+        if (!$sanitizer->sanitize()) {
+            throw ValidationException::withErrors($sanitizer->getErrors());
+        }
+
+        return $sanitizer->getData();
+    }
+
+    /**
+     * Nao guarda estado: a requisicao segue imutavel e quem precisa dos dados
      * depois segura o retorno.
      *
      * @param array<string, string> $rules chave => 'required|min:3|max:100'

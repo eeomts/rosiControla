@@ -11,11 +11,7 @@ namespace Cubo\Tools;
  */
 final class Number
 {
-    /**
-     * Valor monetário por extenso.
-     *
-     * @example spellCurrency(1234.56) retorna 'um mil, duzentos e trinta e quatro reais e cinquenta e seis centavos'
-     */
+    /** @example spellCurrency(1234.56) retorna 'um mil, duzentos e trinta e quatro reais e cinquenta e seis centavos' */
     public static function spellCurrency(float $valor, bool $upper = false): string
     {
         return self::spell(
@@ -27,7 +23,7 @@ final class Number
     }
 
     /**
-     * Número por extenso, sem rótulo de moeda.
+     * Sem rotulo de moeda.
      *
      * @example spellNumber(1234) retorna 'um mil e duzentos e trinta e quatro'
      */
@@ -41,9 +37,7 @@ final class Number
         );
     }
 
-    /**
-     * @param string $pos 'L' esquerda, 'R' direita, 'B' ambos
-     */
+    /** @param string $pos 'L' esquerda, 'R' direita, 'B' ambos */
     public static function pad(string $value, int $length, string $char = '0', string $pos = 'L'): string
     {
         return match (strtoupper($pos)) {
@@ -54,7 +48,7 @@ final class Number
     }
 
     /**
-     * String monetária BR para o formato de máquina.
+     * Nao sanitiza e nao trata milhar sozinho; para formulario use parseMoney.
      *
      * @example formatMoney('1.234,56') retorna '1234.56'
      */
@@ -68,16 +62,60 @@ final class Number
     }
 
     /**
-     * @example parseMoney('1.234,56') retorna 1234.56
+     * Aceita simbolo, espaco, sinal e os dois separadores; o mais a direita e o
+     * decimal. Sem digito nenhum devolve 0.0.
+     *
+     * @example parseMoney('R$ 1.234,56') retorna 1234.56
+     * @example parseMoney('1,234.56') retorna 1234.56
      */
     public static function parseMoney(string $value): float
     {
-        return (float) self::formatMoney($value);
+        $limpo = preg_replace('/[^\d,.\-]/', '', $value) ?? '';
+        $negativo = str_contains($limpo, '-');
+        $limpo = str_replace('-', '', $limpo);
+
+        if (!preg_match('/\d/', $limpo)) {
+            return 0.0;
+        }
+
+        $decimal = self::decimalSeparator($limpo);
+
+        if ($decimal === null) {
+            $numero = preg_replace('/\D/', '', $limpo) ?? '';
+        } else {
+            $corte = (int) strrpos($limpo, $decimal);
+
+            $numero = (preg_replace('/\D/', '', substr($limpo, 0, $corte)) ?? '')
+                . '.' . (preg_replace('/\D/', '', substr($limpo, $corte + 1)) ?? '');
+        }
+
+        return (float) ($negativo ? '-' . $numero : $numero);
     }
 
     /**
-     * @example formatBytes(1536) retorna '1.5 KB'
+     * String decimal no formato que o banco espera. Ausencia devolve null e nao
+     * 0.00: zero e um valor, falta de valor nao e.
+     *
+     * @example toDecimal('R$ 1.234,5') retorna '1234.50'
      */
+    public static function toDecimal(int|float|string|null $value, int $casas = 2): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            if (!preg_match('/\d/', $value)) {
+                return null;
+            }
+
+            $value = self::parseMoney($value);
+        }
+
+        return number_format((float) $value, $casas, '.', '');
+    }
+
+    /** @example formatBytes(1536) retorna '1.5 KB' */
     public static function formatBytes(float $size, int $decimals = 2): string
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
@@ -97,7 +135,28 @@ final class Number
     # ------------------------------------------------------------------- PRIVATE
 
     /**
-     * Nucleo compartilhado por spellCurrency e spellNumber; diferem so nos rotulos.
+     * "1.234" nao tem resposta certa: mil duzentos e trinta e quatro (mascara
+     * BR) ou um inteiro e 234 milesimos. Real nao tem tres casas, entao grupo
+     * de tres bem formado conta como milhar.
+     */
+    private static function decimalSeparator(string $value): ?string
+    {
+        if (preg_match('/^[1-9]\d{0,2}(\.\d{3})+$/', $value)) {
+            return null;
+        }
+
+        $virgula = strrpos($value, ',');
+        $ponto = strrpos($value, '.');
+
+        return match (true) {
+            $virgula !== false && ($ponto === false || $virgula > $ponto) => ',',
+            $ponto !== false => '.',
+            default => null,
+        };
+    }
+
+    /**
+     * Nucleo do spellCurrency e do spellNumber; diferem so nos rotulos.
      *
      * @param list<string> $singular
      * @param list<string> $plural
@@ -112,7 +171,7 @@ final class Number
         $z = 0;
         $rt = '';
 
-        // number_format com "." como decimal E milhar quebra o valor em grupos de 3.
+        # number_format com "." como decimal E milhar quebra o valor em grupos de 3
         $inteiro = explode('.', number_format($valor, 2, '.', '.'));
 
         foreach ($inteiro as $k => $grupo) {

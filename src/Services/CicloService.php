@@ -3,8 +3,8 @@
 namespace Controla\Services;
 
 use Controla\Models\Ciclo;
-use Controla\Utils\Concerns\NormalizaDatas;
 use Controla\Utils\Exceptions\DadosInvalidosException;
+use Controla\Utils\Normalizacao;
 use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
@@ -14,13 +14,11 @@ use RuntimeException;
  */
 final class CicloService
 {
-    use NormalizaDatas;
-
     private const ANO_MINIMO = 2000;
     private const ANO_MAXIMO = 2100;
 
-    /** @var list<string> */
-    private const CAMPOS_DATA = ['data_inicio', 'data_termino'];
+    /** @var array<string,string> campo => filtro do Sanitizer */
+    private const FILTROS_DATA = ['data_inicio' => 'date', 'data_termino' => 'date'];
 
     /**
      * @param array<string,mixed> $dados Campos crus vindos do formulario.
@@ -31,7 +29,7 @@ final class CicloService
     {
         $ciclo = $this->encontrarOuCriar($id);
 
-        [$dados, $erros] = $this->normalizarDatas($dados, self::CAMPOS_DATA);
+        [$dados, $erros] = Normalizacao::aplicar($dados, self::FILTROS_DATA);
 
         $ciclo->fill($dados);
         $ciclo->nome = $this->nomeOuPadrao($ciclo);
@@ -110,7 +108,7 @@ final class CicloService
             $erros['num_ano'] = 'Informe um ano entre ' . self::ANO_MINIMO . ' e ' . self::ANO_MAXIMO . '.';
         }
 
-        foreach (self::CAMPOS_DATA as $campo) {
+        foreach (array_keys(self::FILTROS_DATA) as $campo) {
             if (!isset($erros[$campo]) && empty($ciclo->{$campo})) {
                 $erros[$campo] = 'Informe a data.';
             }

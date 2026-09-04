@@ -9,10 +9,10 @@ use Controla\Models\StatusPagamento;
 use Controla\Models\VariacaoProduto;
 use Controla\Models\Venda;
 use Controla\Models\VendaVariacaoRel;
-use Controla\Utils\Concerns\NormalizaDatas;
-use Controla\Utils\Concerns\NormalizaMoeda;
 use Controla\Utils\Exceptions\DadosInvalidosException;
+use Controla\Utils\Normalizacao;
 use Cubo\Database\Db;
+use Cubo\Tools\Number;
 use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
@@ -31,9 +31,6 @@ use RuntimeException;
  */
 final class VendaService
 {
-    use NormalizaDatas;
-    use NormalizaMoeda;
-
     private PedidoService $pedidos;
 
     public function __construct(?PedidoService $pedidos = null)
@@ -54,8 +51,10 @@ final class VendaService
     {
         $venda = $this->encontrarOuCriar($id);
 
-        [$dados, $erros] = $this->normalizarDatas($dados, ['data_venda']);
-        $dados = $this->normalizarMoeda($dados, ['mon_desconto']);
+        [$dados, $erros] = Normalizacao::aplicar($dados, [
+            'data_venda' => 'date',
+            'mon_desconto' => 'money',
+        ]);
         $dados['mon_desconto'] ??= '0.00';
 
         $venda->fill($dados);
@@ -103,7 +102,7 @@ final class VendaService
                 'produto' => (string) $unidade->produto?->nome,
                 'fk_produto' => (int) $unidade->fk_produto,
                 'ciclo' => (string) $unidade->ciclo?->nome,
-                'preco' => $this->somaMoeda((float) $unidade->mon_venda),
+                'preco' => Number::toDecimal((float) $unidade->mon_venda),
                 'validade' => $unidade->data_validade?->format('d/m/Y') ?? '',
                 'ids' => [],
             ];
@@ -182,7 +181,7 @@ final class VendaService
 
         $this->ratear((float) $venda->mon_desconto, $linhas);
 
-        $venda->mon_total = $this->somaMoeda($this->somaLiquida($linhas));
+        $venda->mon_total = Number::toDecimal($this->somaLiquida($linhas));
         $venda->save();
 
         $this->recalcularPedidos($pedidosTocados);
@@ -215,7 +214,7 @@ final class VendaService
             // coluna separada: o mon_desconto continua sendo so o que ela deu
             // NAQUELE item, entao reabrir a venda e salvar de novo cai no mesmo
             // rateio em vez de descontar duas vezes
-            $linha->mon_desconto_rateio = $this->somaMoeda($parte);
+            $linha->mon_desconto_rateio = Number::toDecimal($parte);
             $linha->save();
         }
     }
@@ -277,9 +276,10 @@ final class VendaService
      */
     private function precoDoItem(array $item, VariacaoProduto $unidade): string
     {
-        $digitado = $this->normalizarMoeda($item, ['mon_venda'])['mon_venda'] ?? null;
+        // erro aqui nao interessa: preco em branco ou torto cai no da unidade
+        $digitado = Normalizacao::valores($item, ['mon_venda' => 'money'])['mon_venda'] ?? null;
 
-        return $digitado ?? $this->somaMoeda((float) $unidade->mon_venda);
+        return $digitado ?? (string) Number::toDecimal((float) $unidade->mon_venda);
     }
 
     /**
@@ -287,7 +287,7 @@ final class VendaService
      */
     private function descontoDoItem(array $item): string
     {
-        return $this->normalizarMoeda($item, ['mon_desconto'])['mon_desconto'] ?? '0.00';
+        return Normalizacao::valores($item, ['mon_desconto' => 'money'])['mon_desconto'] ?? '0.00';
     }
 
     private function encontrarOuCriar(?int $id): Venda

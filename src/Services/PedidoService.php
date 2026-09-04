@@ -3,14 +3,14 @@
 namespace Controla\Services;
 
 use Controla\Models\Ciclo;
-use Controla\Utils\Concerns\NormalizaDatas;
-use Controla\Utils\Concerns\NormalizaMoeda;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
+use Controla\Utils\Normalizacao;
 use Controla\Models\Pedido;
 use Controla\Models\VariacaoProduto;
 use Controla\Models\VendaVariacaoRel;
 use Controla\Models\Produto;
+use Cubo\Tools\Number;
 use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
@@ -20,9 +20,6 @@ use RuntimeException;
  */
 final class PedidoService
 {
-    use NormalizaDatas;
-    use NormalizaMoeda;
-
     private const QUANTIDADE_MAXIMA = 999;
 
     /**
@@ -34,7 +31,7 @@ final class PedidoService
     {
         $pedido = $this->encontrarOuCriar($id);
 
-        [$dados, $erros] = $this->normalizarDatas($dados, ['data_pedido']);
+        [$dados, $erros] = Normalizacao::aplicar($dados, ['data_pedido' => 'date']);
 
         $pedido->fill($dados);
 
@@ -54,8 +51,11 @@ final class PedidoService
      */
     public function adicionarProduto(Pedido $pedido, array $dados): array
     {
-        [$dados, $erros] = $this->normalizarDatas($dados, ['data_validade']);
-        $dados = $this->normalizarMoeda($dados, ['mon_custo', 'mon_venda']);
+        [$dados, $erros] = Normalizacao::aplicar($dados, [
+            'data_validade' => 'date',
+            'mon_custo' => 'money',
+            'mon_venda' => 'money',
+        ]);
 
         $this->validarProduto($dados, $erros);
 
@@ -185,8 +185,8 @@ final class PedidoService
 
             $grupos[$chave] ??= [
                 'produto' => (string) $unidade->produto?->nome,
-                'custo' => $this->somaMoeda((float) $unidade->mon_custo),
-                'venda' => $this->somaMoeda((float) $unidade->mon_venda),
+                'custo' => Number::toDecimal((float) $unidade->mon_custo),
+                'venda' => Number::toDecimal((float) $unidade->mon_venda),
                 'validade' => $unidade->data_validade?->format('d/m/Y') ?? '',
                 'ids' => [],
                 // separado porque a vendida pode ser qualquer uma do grupo, nao
@@ -216,8 +216,8 @@ final class PedidoService
             ->selectRaw('COALESCE(SUM(mon_venda - mon_custo), 0) as lucro')
             ->first();
 
-        $pedido->mon_total = $this->somaMoeda((float) $totais->total);
-        $pedido->mon_lucro_estimado = $this->somaMoeda((float) $totais->lucro);
+        $pedido->mon_total = Number::toDecimal((float) $totais->total);
+        $pedido->mon_lucro_estimado = Number::toDecimal((float) $totais->lucro);
 
         $pedido->save();
 
@@ -239,7 +239,7 @@ final class PedidoService
             )
             ->first();
 
-        $pedido->mon_lucro_real = $this->somaMoeda((float) $total->lucro);
+        $pedido->mon_lucro_real = Number::toDecimal((float) $total->lucro);
 
         $pedido->save();
 

@@ -1,0 +1,36 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Ofusca um valor para o config.ini (Cubo\Tools\Str::cuboEncode).
+ *
+ * O Db decodifica user e pass na conexao, entao os dois TEM de estar
+ * codificados no ini:
+ *
+ *   php bin/encode "a-senha"
+ */
+
+use Cubo\Tools\Str;
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$valor = $argv[1] ?? null;
+
+if ($valor === null) {
+    fwrite(STDERR, "uso: php bin/encode \"valor\"\n");
+    exit(1);
+}
+
+$codificado = Str::cuboEncode($valor);
+
+echo $codificado, "\n";
+
+# cuboEncode passa por cleanSpecialChars: caractere exotico nao volta igual
+if (Str::cuboDecode($codificado) !== $valor) {
+    fwrite(STDERR, "ATENCAO: o valor nao volta igual no decode. Troque a senha.\n");
+    exit(2);
+}

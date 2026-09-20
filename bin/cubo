@@ -1,0 +1,28 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Entrada do console do Cubo.
+ *
+ * Os comandos de migration tomam o diretorio ATUAL como raiz da app, entao
+ * rode sempre da raiz do projeto: php bin/cubo migrate
+ */
+
+use Cubo\Console\CommandRegistry;
+use Cubo\Console\Input;
+use Cubo\Console\Kernel;
+use Cubo\Console\Output;
+use Cubo\Console\Paths;
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+# Paths aponta para o framework (cubo/), nao para a app: e de la que saem o
+# VERSION e os esqueletos do build
+exit((new Kernel(CommandRegistry::default(new Paths(dirname(__DIR__) . '/cubo'))))->run(
+    Input::fromArgv($argv),
+    new Output()
+));

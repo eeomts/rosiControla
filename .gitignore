@@ -14,10 +14,6 @@ TODO/
 
 #confis private
 config.ini
-.env
 
-#dados do docker
-/data/
-
-#anotacoes
-deploy/info/
+#refs
+archives/

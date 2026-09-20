@@ -1,145 +1,119 @@
 # Deploy do Controla
 
-Docker na VPS: **nginx do host termina o TLS e faz proxy** para o compose, que
-sobe `web` (nginx), `app` (php-fpm) e `db` (MariaDB).
-
 ```
-internet -> nginx do HOST (443, certbot)
-              proxy_pass 127.0.0.1:8001
-                -> web (nginx) -> fastcgi app:9000 -> app (php-fpm) -> db (mariadb)
+internet :80/:443
+  -> web   Caddy: termina o TLS, serve public/, manda o resto por fastcgi
+       -> app   php-fpm: aplica as migrations e roda a aplicacao
+            -> db    MariaDB, so na rede interna do compose
 ```
 
-A porta `8001` fica em `127.0.0.1` de proposito: quem alcanca e o nginx do host,
-nao a internet.
+Tres regras que explicam o resto:
 
-O `deploy/nginx.conf` (na pasta acima desta) e o modo ANTIGO, sem docker, com
-php-fpm no host. Ficou para referencia.
+1. **`config/config.ini` e a unica configuracao.** Nao ha `.env`. O dominio, o
+   nome do banco, o usuario e a senha saem dele.
+2. **Quem sobe e o `./deploy/controla`.** O compose so le variavel de ambiente;
+   o script le o ini e preenche. `docker compose` cru para com erro de proposito.
+3. **O schema e as migrations.** O container aplica as pendentes antes de
+   servir. Nao existe `schema.sql`.
 
-## Primeira subida
+## Primeira subida na VPS
+
+Precisa de: docker, e o dominio ja apontando para o IP da VPS (o Caddy pede o
+certificado sozinho, mas so consegue se o DNS ja resolver).
 
 ```sh
 git clone <repo> ~/controla && cd ~/controla
 
-cp deploy/env.example .env                       # senhas do banco
-cp deploy/config.ini.example deploy/config.ini   # dominio + credenciais
-
-# as credenciais do config.ini vao ofuscadas (Str::cuboDecode)
-php deploy/cubo-encode.php "controla"        # -> user
-php deploy/cubo-encode.php "a-senha-do-.env" # -> pass
-
-docker compose up -d --build
-docker compose logs -f app
+cp config/config.ini.example config/config.ini
 ```
 
-O `database/schema.sql` roda sozinho na primeira vez, enquanto `./data/mysql`
-estiver vazio. Depois disso ele e ignorado -- mudanca de schema e na mao.
+No `config/config.ini`:
 
-Depois:
+```ini
+location = wan
+host.wan = https://controla.SEU-DOMINIO.com/
+enviroment = production
+servidor = VPS
+```
+
+E as credenciais do banco, na secao `[database.wan]`. Elas vao ofuscadas -- o
+`Db` desfaz o `cuboEncode` na conexao, e o `./deploy/controla` desfaz para
+entregar ao MariaDB. E a mesma senha nos dois lados porque e o mesmo arquivo:
 
 ```sh
-sudo cp deploy/nginx/host-proxy.conf /etc/nginx/sites-available/controla
-sudo nano /etc/nginx/sites-available/controla        # server_name
-sudo ln -s /etc/nginx/sites-available/controla /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d controla.SEU-DOMINIO.com
+docker run --rm -v "$PWD":/app -w /app composer:2 install   # se nao houver vendor/
+php bin/encode "controla"     # -> user
+php bin/encode "a-senha"      # -> pass
 ```
 
-## Testar em container ANTES de ir para a VPS
+> Se o encode avisar que o valor nao volta igual, troque a senha: o
+> `cuboEncode` troca caractere especial por `_`. Letras e numeros passam limpo.
 
-Roda a mesma imagem, com banco e projeto separados dos de producao:
+Entao:
 
 ```sh
-cp deploy/env.example .env                          # se ainda nao existir
-cp deploy/dev/config.ini.example deploy/dev/config.ini
-docker run --rm -v "$PWD":/app -w /app php:8.2-cli php deploy/cubo-encode.php "controla"
-
-docker compose -f docker-compose.yml -f deploy/dev/compose.yml up -d --build
+./deploy/controla up -d --build
+./deploy/controla logs -f
 ```
 
-Abre em <http://localhost:8001>. O `-f` duplo e obrigatorio: o override **nao**
-se chama `docker-compose.override.yml` justamente para nao entrar sozinho na VPS.
-
-O que o modo dev muda:
-
-| | producao | dev |
-|---|---|---|
-| projeto | `controla` | `controla-dev` |
-| dados | `./data/mysql` | `./data/dev-mysql` |
-| banco exposto | nao | `127.0.0.1:13306` (para o DataGrip) |
-| `src/`, `views/`, `public/` | dentro da imagem | bind mount do host |
-| php.ini | erro no log | erro na tela, opcache revalidando |
-
-Com o bind mount, editar `src/` ou `views/` reflete no proximo F5 -- sem
-rebuild. Mudou `composer.json` ou o Dockerfile, ai sim `up -d --build`.
-
-Para derrubar so o dev: `docker compose -f docker-compose.yml -f deploy/dev/compose.yml down`.
+O boot demora ~30s na primeira vez: o MariaDB inicializa, o `app` espera o
+healthcheck, aplica as migrations e so entao aceita requisicao.
 
 ## Atualizar
 
 ```sh
-cd ~/controla && git pull && docker compose up -d --build
+cd ~/controla && git pull && ./deploy/controla up -d --build
 ```
 
-O `vendor/` e o autoload otimizado sao gerados no build; nao ha `composer
-install` na VPS nem build step de front (o Alpine e vendorizado no repo).
+E so. Migration nova entra sozinha no start. O banco nao e tocado.
 
-## Backup -- a parte que nao pode faltar
+> `opcache.validate_timestamps = 0`: editar arquivo dentro do container nao muda
+> nada. Toda atualizacao passa por `--build`.
+
+## Testar em container antes da VPS
+
+Mesma imagem, mesmo compose -- muda so a `location` do ini:
+
+```ini
+location = docker
+host.docker = http://localhost/     ; ou http://localhost:8080/ se a 80 estiver ocupada
+```
 
 ```sh
-chmod +x deploy/backup.sh
-crontab -e
-15 3 * * * cd ~/controla && ./deploy/backup.sh >> data/backup.log 2>&1
+./deploy/controla up -d --build
 ```
 
-Para mandar para fora do host (o que de fato importa), configure o rclone e
-exporte `RCLONE_DESTINO=drive:backups/controla` no cron.
+A porta declarada no `host.docker` e a que o compose publica.
 
-**Teste o restore uma vez.** Backup nao testado e fe, nao backup:
+## Dia a dia
 
 ```sh
-gunzip -c data/backup/controla-AAAAMMDD-HHMM.sql.gz \
-  | docker compose exec -T db mariadb -u root -p"$DB_ROOT_PASSWORD" rosi_controla
+./deploy/controla ps                        # o que esta de pe
+./deploy/controla logs -f app               # log da aplicacao (erro de PHP cai aqui)
+./deploy/controla logs -f web               # acesso e TLS
+./deploy/controla restart app
+./deploy/controla down                      # derruba; os dados ficam no volume
+./deploy/controla exec app php bin/cubo migrate:status
+./deploy/controla exec db mariadb -u controla -p rosi_controla
 ```
 
-## Watchdog
-
-`restart: unless-stopped` nao traz o container de volta depois de um `docker stop`
-explicito ou de um prune. O timer traz:
+Backup (nao ha nenhum configurado ainda):
 
 ```sh
-sudo cp deploy/controla.service deploy/controla-watchdog.service deploy/controla-watchdog.timer \
-     /etc/systemd/system/
-sudo nano /etc/systemd/system/controla.service          # User e WorkingDirectory
-sudo nano /etc/systemd/system/controla-watchdog.service # idem
-sudo systemctl daemon-reload
-sudo systemctl enable --now controla controla-watchdog.timer
+./deploy/controla exec -T db mariadb-dump -u controla -pSENHA \
+    --single-transaction rosi_controla | gzip > controla-$(date +%F).sql.gz
 ```
 
-## Armadilhas conhecidas
+## Armadilhas
 
-1. **`SERVER_NAME`** -- `Cubo\Routing\Router::parseUrl()` monta a rota com
-   `SERVER_NAME . REQUEST_URI` e corta o `CUBO_DIR_NAME`, que sai do `host.wan`
-   do `config.ini` sem o protocolo. Se os dois nao casarem, a URL inteira vira
-   segmento e **toda rota quebra**. Por isso o `proxy_set_header Host $host` no
-   host e o `fastcgi_param SERVER_NAME $host` no container -- e o `host.wan`
-   tem de ser o dominio real **com a barra final**.
-2. **Dados do banco em bind mount** (`./data/mysql`), nao em volume gerenciado:
-   `docker volume prune` nao enxerga diretorio do host. A VPS e compartilhada.
-3. **`enviroment` != `development`** no `config.ini`, senao a excecao aparece na
-   tela do usuario em vez de ir para o log.
-4. **`opcache.validate_timestamps = 0`**: editar arquivo dentro do container nao
-   muda nada. Atualizacao e sempre `up -d --build`.
-5. **O `public/.htaccess` e inerte** aqui -- e regra de Apache. Quem faz o
-   rewrite e o `try_files` do nginx.
-6. **O `cuboEncode` passa por `cleanSpecialChars`**: senha com caractere exotico
-   pode nao voltar igual. O `deploy/cubo-encode.php` confere o round-trip e
-   avisa; se avisar, troque a senha.
-7. **No Windows, porta pode estar RESERVADA sem estar em uso.** O Hyper-V
-   reserva faixas inteiras; o bind falha com `An attempt was made to access a
-   socket in a way forbidden by its access permissions`. Ver as faixas com
-   `netsh interface ipv4 show excludedportrange protocol=tcp` e escolher uma
-   fora delas (`PORTA_DB_LOCAL` / `PORTA_LOCAL` no `.env`).
-8. **Crie o `deploy/config.ini` ANTES do primeiro `up`.** Se o arquivo nao
-   existir, o docker cria um DIRETORIO com esse nome no lugar dele e a
-   aplicacao quebra de um jeito confuso. Se acontecer: `rm -rf
-   deploy/config.ini`, copie o example de novo e suba outra vez.
+1. **`./deploy/controla down -v` apaga o banco.** E o unico comando que mexe nos
+   volumes. Nenhum outro.
+2. **Crie o `config/config.ini` ANTES do primeiro `up`.** O script confere e
+   avisa; se voce driblar e subir sem ele, o docker cria um *diretorio* com esse
+   nome no lugar do arquivo e a aplicacao quebra de um jeito confuso.
+3. **`enviroment` != `development` na VPS**, senao a excecao aparece na tela da
+   usuaria em vez de ir para o log.
+4. **O certificado vive no volume `caddy`.** Nao apague esse volume a toa: o
+   Let's Encrypt limita quantos certificados voce pode pedir por semana.
+5. **O `host.<location>` precisa da barra final.** E dela que sai o caminho base
+   das rotas.

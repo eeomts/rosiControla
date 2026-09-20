@@ -1,0 +1,92 @@
+#!/bin/sh
+
+set -eu
+
+cd "$(dirname "$0")/.."
+
+INI="config/config.ini"
+
+if [ ! -f "$INI" ]; then
+    echo "erro: $INI nao existe." >&2
+    echo "  cp config/config.ini.example $INI   e preencha antes de subir" >&2
+    exit 1
+fi
+
+# ini <secao> <chave> -- primeiro valor da chave dentro da secao
+ini() {
+    sed -n "/^[[:space:]]*\[$1\]/,/^[[:space:]]*\[/p" "$INI" \
+        | sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" \
+        | head -n 1 | tr -d '"\r'
+}
+
+# Cubo\Tools\Str::cuboDecode em shell: base64 de fora, quebra nos '_', base64
+# de cada pedaco. Corpo entre () para o IFS trocado nao vazar.
+cubo_decode() (
+    [ -n "${1:-}" ] || return 0
+
+    bruto=$(printf '%s' "$1" | base64 -d 2>/dev/null) || return 0
+    saida=''
+
+    IFS='_'
+    for parte in $bruto; do
+        saida="${saida}${saida:+_}$(printf '%s' "$parte" | base64 -d 2>/dev/null)"
+    done
+
+    printf '%s' "$saida"
+)
+
+exigir() {
+    if [ -z "$2" ]; then
+        echo "erro: $1 nao foi encontrado em $INI (secao da location '$LOCATION')" >&2
+        exit 1
+    fi
+}
+
+LOCATION=$(ini cubo location)
+exigir "cubo.location" "$LOCATION"
+
+# ------------------------------------------------------------------ endereco
+
+HOST_URL=$(ini cubo "host\.$LOCATION")
+exigir "cubo.host.$LOCATION" "$HOST_URL"
+
+HOST_URL=${HOST_URL%/}
+ESQUEMA=${HOST_URL%%://*}
+AUTORIDADE=${HOST_URL#*://}
+AUTORIDADE=${AUTORIDADE%%/*}
+
+# O Caddy escuta sempre nas portas padrao DENTRO do container; porta declarada
+# no ini (util so no teste local, quando a 80 do host esta ocupada) vira
+# publicacao no compose.
+case "$AUTORIDADE" in
+    *:*)
+        PORTA_HTTP=${AUTORIDADE##*:}
+        AUTORIDADE=${AUTORIDADE%%:*}
+        ;;
+    *)
+        PORTA_HTTP=80
+        ;;
+esac
+
+export CONTROLA_SITE="$ESQUEMA://$AUTORIDADE"
+export CONTROLA_PORTA_HTTP="$PORTA_HTTP"
+
+# --------------------------------------------------------------------- banco
+
+DB_HOST=$(ini "database\.$LOCATION" host)
+DB_NAME=$(ini "database\.$LOCATION" db)
+DB_USER=$(cubo_decode "$(ini "database\.$LOCATION" user)")
+DB_PASSWORD=$(cubo_decode "$(ini "database\.$LOCATION" pass)")
+
+exigir "database.$LOCATION.db" "$DB_NAME"
+exigir "database.$LOCATION.user" "$DB_USER"
+exigir "database.$LOCATION.pass" "$DB_PASSWORD"
+
+if [ "$DB_HOST" != "db" ]; then
+    echo "aviso: [database.$LOCATION] host = '$DB_HOST', e nao 'db'." >&2
+    echo "       dentro do compose o banco atende pelo nome do servico." >&2
+fi
+
+export DB_NAME DB_USER DB_PASSWORD
+
+exec docker compose "$@"

@@ -1,0 +1,59 @@
+name: controla
+
+services:
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: web
+    restart: always
+    depends_on:
+      - app
+    environment:
+      CONTROLA_SITE: ${CONTROLA_SITE:?suba pelo ./deploy/controla}
+    ports:
+      - "${CONTROLA_PORTA_HTTP:-80}:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy:/data
+      - caddy-config:/config
+
+  app:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./config/config.ini:/var/www/html/config/config.ini:ro
+      - logs:/var/www/html/storage/logs
+
+  db:
+    image: mariadb:11.8
+    restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+      MARIADB_DATABASE: ${DB_NAME:?suba pelo ./deploy/controla}
+      MARIADB_USER: ${DB_USER:?suba pelo ./deploy/controla}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?suba pelo ./deploy/controla}
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - banco:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  banco:
+  caddy:
+  caddy-config:
+  logs:

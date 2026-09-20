@@ -1,13 +1,31 @@
-; Copie para config.ini e ajuste.
-; user e pass ficam ofuscados: Cubo\Tools\Str::cuboEncode('valor') gera, o Db decodifica.
+;cp config/config.ini.example config/config.ini
+;
+; Trocar de ambiente e trocar a linha `location` abaixo. Cada ambiente tem o seu
+; host.<location> e a sua secao [database.<location>].
+;
+;   local    php -S localhost:8123 router-dev.php, com o banco na sua maquina
+;   docker   os containers rodando na sua maquina para teste
+;   wan      a VPS
+;
+; user e pass ficam ofuscados (Str::cuboDecode desfaz na conexao):
+;
+;   php bin/encode "a-senha"
 
 [cubo]
 location = local
-host.local = http://localhost/
-host.wan = https://SEU-DOMINIO/
+
+; A barra final faz parte: e dela que sai o caminho base das rotas. Porta
+; declarada aqui (so faz sentido em local/docker) vira a porta publicada pelo
+; compose.
+host.local = http://localhost:8123/
+host.docker = http://localhost/
+host.wan = https://controla.SEU-DOMINIO.com/
+
+; qualquer coisa != development manda a excecao para o log em vez da tela
 enviroment = development
 servidor = LOCAL
 versao = V1
+
 table_prefix =
 database_prefix =
 path_prefix =
@@ -15,24 +33,36 @@ redir =
 url_login =
 
 [database.local]
-; dbtype = mariadb usa o driver nativo do illuminate 11 (MariaDbConnector)
-; charset/collation sao opcionais; sem eles o Db assume utf8mb4
+; dbtype = mariadb usa o MariaDbConnector nativo do illuminate 11
 dbtype = mariadb
 host = localhost
 port = 3306
-db = 
-user = "Y205dmRBPT0="
-pass = ""
-
-[database.wan]
-; dbtype = mariadb usa o driver nativo do illuminate 11 (MariaDbConnector)
-; charset/collation sao opcionais; sem eles o Db assume utf8mb4
-dbtype = mariadb
-host = 127.0.0.1
-port = 3306
-db = 
+db = rosi_controla
 user = ""
 pass = ""
+charset = utf8mb4
+collation = utf8mb4_unicode_ci
+
+[database.docker]
+dbtype = mariadb
+; "db" e o nome do servico no compose.yml;
+host = db
+port = 3306
+db = rosi_controla
+user = ""
+pass = ""
+charset = utf8mb4
+collation = utf8mb4_unicode_ci
+
+[database.wan]
+dbtype = mariadb
+host = db
+port = 3306
+db = rosi_controla
+user = ""
+pass = ""
+charset = utf8mb4
+collation = utf8mb4_unicode_ci
 
 [app]
 ; Namespace dos controladores resolvidos pela CONVENCAO (/controlador/acao).
@@ -45,14 +75,14 @@ view = Controla\Views\DefaultView
 ; Raiz dos templates, relativa a raiz do projeto. Aceita varias, em ordem.
 templates = templates/
 
-; Tabela de rotas declaradas; consultada ANTES da convencao.
+; Tabela de rotas declaradas;
 routes = routing/routes.php
 
-; Onde o `cubo migrate` procura as migrations.
+; Onde o `php bin/cubo migrate` procura as migrations.
 migrations = database/migrations
 
 timezone = America/Sao_Paulo
 charset = UTF-8
 
-; Usado so fora de development: o ErrorHandler escreve aqui.
+;ErrorHandler escreve aqui.
 log = storage/logs/erro.log

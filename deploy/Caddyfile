@@ -1,0 +1,40 @@
+{
+	# ninguem administra este Caddy pela API
+	admin off
+}
+
+# O endereco vem do host.<location> do config.ini, pelo ./deploy/controla.
+# https://dominio -> certificado emitido e renovado sozinho;
+# http://localhost -> HTTP puro, sem certificado.
+{$CONTROLA_SITE} {
+
+	root * /var/www/html/public
+
+	encode zstd gzip
+
+	# arquivo oculto nunca e servido, nem por engano
+	handle /.* {
+		respond 404
+	}
+
+	handle {
+		# tenta o arquivo em disco; o que nao existir vai para o index.php
+		php_fastcgi app:9000
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+		-Server
+	}
+
+	@estatico path *.css *.js *.woff2 *.woff *.png *.jpg *.svg *.ico
+	header @estatico Cache-Control "public, max-age=2592000"
+
+	# stderr para que tudo apareca no `docker compose logs`
+	log {
+		output stderr
+	}
+}

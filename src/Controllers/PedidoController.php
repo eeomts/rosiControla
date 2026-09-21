@@ -13,11 +13,6 @@ use Controla\Utils\Redirecionamento;
 use RuntimeException;
 
 /**
- * O pedido e as unidades que entraram por ele.
- *
- * A tela tem dois passos porque o cadastro dela e assim: primeiro o cabecalho
- * (ciclo e data), depois os produtos vao entrando um a um com a nota na mao.
- *
  * @package Controla
  * @author Mateus - github.com/eeomts
  */

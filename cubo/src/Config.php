@@ -35,21 +35,6 @@ final class Config
     {
         $this->_loadIniFile();
 
-        if (isset($_SERVER['HTTPS']))
-            $protocol = ($_SERVER['HTTPS'] && $_SERVER['HTTPS'] != "off") ? "https" : "http";
-        else
-            $protocol = 'http';
-
-        # em CLI nao ha requisicao: sem o default o boot quebraria com "Undefined array key"
-        if (!defined("SERVER"))
-            define('SERVER', $_SERVER['HTTP_HOST'] ?? '');
-
-        if (!defined("WEB"))
-            define('WEB', $_SERVER['REQUEST_URI'] ?? '');
-
-        if (!defined("CUBO_DIR_NAME"))
-            define('CUBO_DIR_NAME', str_replace($protocol . '://', '', $this->getConfig('ini.cubo.host')));
-
         # DS e definido pelo index.php da APP, nao pelo framework
         if (!defined("CUBO_ROOT"))
             define('CUBO_ROOT', dirname(__FILE__) . DIRECTORY_SEPARATOR);

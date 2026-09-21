@@ -20,6 +20,8 @@ readonly class Route
      * @param class-string|null $controllerClass FQCN; so rota declarada preenche
      * @param list<string> $middleware alem dos globais
      * @param string|null $name nome da rota declarada, para gerar URL
+     * @param list<string> $verbosPermitidos verbos que a tabela declara para ESTE
+     *        caminho quando nada casou; so o kernel preenche a resposta (405)
      */
     public function __construct(
         public string $controller,
@@ -29,7 +31,8 @@ readonly class Route
         public ?string $module = null,
         public ?string $controllerClass = null,
         public array $middleware = [],
-        public ?string $name = null
+        public ?string $name = null,
+        public array $verbosPermitidos = []
     ) {}
 
     public function temModulo(): bool

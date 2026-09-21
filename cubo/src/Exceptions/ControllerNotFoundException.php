@@ -9,13 +9,20 @@ namespace Cubo\Exceptions;
  */
 final class ControllerNotFoundException extends CuboException
 {
-    /**
-     * Named constructor: deixa o call site legível e o código correto garantido.
-     */
+    
     public static function for(string $controller): self
     {
         return new self(
             "Controlador não encontrado: {$controller}",
+            self::CODE_CONTROLLER_MISSING,
+        );
+    }
+
+    
+    public static function naoInstanciavel(string $controller): self
+    {
+        return new self(
+            "Controlador não instanciável: {$controller} (classe abstrata ou construtor não público)",
             self::CODE_CONTROLLER_MISSING,
         );
     }

@@ -33,15 +33,15 @@ class Router
     public function parseUrl(Request $request): Route
     {
         $path = $this->requestPath($request);
+        $tabela = $this->tabela();
 
-        # a tabela casa o caminho CRU: '/grid-menus' nunca casaria contra o segmento ja em camelCase
-        $declarada = $this->tabela()?->match($path, $request->method());
+        
+        $declarada = $tabela?->match($path, $request->method());
 
         if ($declarada !== null) {
             return $declarada;
         }
 
-        # cada segmento vira camelCase (grid-menus -> gridMenus)
         $parsed = [];
         foreach (explode('/', $path) as $segment) {
             $parsed[] = $this->toCamelCase($segment);
@@ -50,16 +50,21 @@ class Router
         $head = $this->mapper->head($parsed);
         [$params, $rawParams] = $this->parseParams($parsed, $head->consumed);
 
+        # caminho que a tabela tem sob OUTRO verbo vai anotado, nao lancado: parseUrl
+        # roda antes da pilha de middleware, entao um erro aqui escaparia do
+        # tratamento do app e mataria o preflight do CorsMiddleware. Quem responde
+        # 405 a partir da anotacao e o kernel, ja dentro da pilha.
         return new Route(
             $head->controller,
             $head->method,
             $params,
             $rawParams,
-            $head->module
+            $head->module,
+            verbosPermitidos: $tabela?->verbosPermitidos($path) ?? []
         );
     }
 
-    /** Sem a subpasta de montagem e sem query string; o dominio nao participa. */
+    
     private function requestPath(Request $request): string
     {
         $path = $request->path();
@@ -74,7 +79,7 @@ class Router
         return trim($path, '/');
     }
 
-    /** Tabela injetada tem precedencia; sem ela vale a do [app] routes. */
+    
     private function tabela(): ?RouteCollection
     {
         if ($this->routes !== null) {
@@ -98,8 +103,6 @@ class Router
     }
 
     /**
-     * Pares chave/valor que vem depois da cabeca da rota.
-     *
      * @param list<string> $segments
      * @param int $from indice do primeiro segmento de parametro
      * @return array{0: array<string,string>, 1: list<string>} [params, rawParams]
@@ -125,7 +128,7 @@ class Router
         return [$params, $rawParams];
     }
 
-    /** grid-menus-filho -> gridMenusFilho ; ctrl/grid-menus -> Ctrl/gridMenus */
+    
     public function transformMethod(string $value): string
     {
         $parts = explode('/', $value);
@@ -142,13 +145,13 @@ class Router
         return ucwords(strtolower($route->module ?? $route->controller));
     }
 
-    /** Host + modulo, para exportacao/impressao. */
+    
     public function getUrlExport(Route $route): string
     {
         return Config::getInstance()->getConfig('ini.cubo.host') . $this->getNameModule($route);
     }
 
-    /** "com-hifen" em camelCase: o primeiro pedaco fica como esta, os seguintes recebem ucfirst. */
+    
     private function toCamelCase(string $value): string
     {
         $parts = explode('-', $value);
@@ -161,7 +164,7 @@ class Router
             return $out;
         }
 
-        # sem hifen: ucfirst so quando o 2o caractere e vazio/'0'
+        
         $second = $value[1] ?? '';
         return ($second === '' || $second === '0') ? ucfirst($value) : $value;
     }

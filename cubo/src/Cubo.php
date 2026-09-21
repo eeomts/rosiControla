@@ -4,6 +4,7 @@ namespace Cubo;
 
 use Cubo\Exceptions\ActionNotFoundException;
 use Cubo\Exceptions\ControllerNotFoundException;
+use Cubo\Exceptions\MethodNotAllowedException;
 use Cubo\Http\Middleware;
 use Cubo\Http\MiddlewareStack;
 use Cubo\Http\Request;
@@ -129,11 +130,15 @@ final class Cubo
     }
 
     /**
-     * Duas formas de despachar convivem: rota DECLARADA diz a action e o kernel
-     * chama; rota por CONVENCAO cai em index() e o controlador despacha.
+     * @throws MethodNotAllowedException quando a tabela tem o caminho sob outro verbo
      */
     public function dispatch(Route $route, Request $request): Controller
     {
+       
+        if ($route->verbosPermitidos !== []) {
+            throw MethodNotAllowedException::for($request->method(), $route->verbosPermitidos);
+        }
+
         $controller = $this->resolveController($route, $request);
 
         $controller->initialize();
@@ -175,6 +180,11 @@ final class Cubo
 
         if (!class_exists($class) || !is_subclass_of($class, Controller::class)) {
             throw ControllerNotFoundException::for($class);
+        }
+
+        
+        if (!(new \ReflectionClass($class))->isInstantiable()) {
+            throw ControllerNotFoundException::naoInstanciavel($class);
         }
 
         return new $class($route, $request);

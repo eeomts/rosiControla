@@ -5,13 +5,6 @@ namespace Controla\Controllers;
 use Controla\Controllers\Base\FeatureController;
 
 /**
- * A tela que responde quando a URL nao aponta para feature nenhuma.
- *
- * Quem decide QUANDO ela aparece e o NaoEncontradoMiddleware, que captura a
- * ControllerNotFoundException do Cubo. O framework so sinaliza com a excecao
- * tipada; traduzir isso em 404 e em uma pagina e trabalho da app, que e quem
- * conhece o layout.
- *
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
@@ -22,5 +15,11 @@ final class ErroController extends FeatureController
         $this->pagina('Pagina nao encontrada', 'erro/404.php', [
             'caminho' => $this->request->texto('caminho'),
         ]);
+    }
+
+    /** O caminho existe, mas nao sob o verbo pedido (405). */
+    public function metodo(): void
+    {
+        $this->pagina('Essa pagina nao abre direto', 'erro/405.php');
     }
 }

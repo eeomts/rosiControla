@@ -106,9 +106,13 @@ final class Migrator
         return $situacao;
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     public function pendentes(): array
     {
+        $this->garantirTabelaDeControle();
+
         $aplicadas = $this->aplicadas();
 
         return array_values(array_filter(

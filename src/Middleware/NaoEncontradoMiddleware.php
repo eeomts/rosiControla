@@ -4,6 +4,7 @@ namespace Controla\Middleware;
 
 use Controla\Controllers\ErroController;
 use Cubo\Exceptions\ControllerNotFoundException;
+use Cubo\Exceptions\MethodNotAllowedException;
 use Cubo\Http\Middleware;
 use Cubo\Http\Request;
 use Cubo\Http\Response;
@@ -20,28 +21,29 @@ final class NaoEncontradoMiddleware implements Middleware
         try {
             return $next($request);
         } catch (ControllerNotFoundException) {
-            return $this->pagina($request);
+            return $this->pagina($request, 'index', ['caminho' => $this->telaPedida($request)], 404);
+        } catch (MethodNotAllowedException $e) {
+            # o Allow e exigencia da RFC 9110 para o 405, e sai da propria excecao
+            return $this->pagina($request, 'metodo', [], 405)
+                ->header('Allow', implode(', ', $e->permitidos()));
         }
     }
 
     /**
-     * Renderiza a tela de erro do jeito que o kernel renderiza qualquer outra:
-     * initialize(), a action, e o display() dentro de um buffer.
+     * @param array<string,string> $params
      */
-    private function pagina(Request $request): Response
+    private function pagina(Request $request, string $acao, array $params, int $status): Response
     {
-        $controller = new ErroController(
-            new Route('erro', 'index', ['caminho' => $this->telaPedida($request)]),
-            $request
-        );
+        $controller = new ErroController(new Route('erro', $acao, $params), $request);
 
         $controller->initialize();
-        $controller->index();
+
+        $controller->{$acao}();
 
         ob_start();
         $controller->getModule()->display();
 
-        return Response::html((string) ob_get_clean(), 404);
+        return Response::html((string) ob_get_clean(), $status);
     }
 
     /** Primeiro segmento do caminho: e o que a tela chama de "tela pedida". */

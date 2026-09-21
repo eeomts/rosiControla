@@ -97,6 +97,28 @@ class RouteCollection
         return null;
     }
 
+    /**
+     * @return list<string> na ordem de declaracao, sem repetir
+     */
+    public function verbosPermitidos(string $path): array
+    {
+        $verbos = [];
+
+        foreach ($this->rotas as $rota) {
+            if ($rota->casa($path) === null) {
+                continue;
+            }
+
+            foreach ($rota->getVerbs() as $verbo) {
+                if (!in_array($verbo, $verbos, true)) {
+                    $verbos[] = $verbo;
+                }
+            }
+        }
+
+        return $verbos;
+    }
+
     /** @return list<RouteDefinition> */
     public function all(): array
     {

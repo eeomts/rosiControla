@@ -72,9 +72,21 @@ final class RouteDefinition
         return $this->action;
     }
 
+    /** @return list<string> */
+    public function getVerbs(): array
+    {
+        return $this->verbs;
+    }
+
     public function aceitaVerbo(string $verb): bool
     {
-        return in_array(strtoupper($verb), $this->verbs, true);
+        $verbo = strtoupper($verb);
+
+        if ($verbo === 'HEAD' && in_array('GET', $this->verbs, true)) {
+            return true;
+        }
+
+        return in_array($verbo, $this->verbs, true);
     }
 
     /** @return array<string, string>|null null quando o caminho nao casa */

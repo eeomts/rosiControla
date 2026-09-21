@@ -1,20 +1,96 @@
-/* Paleta do Controla. Lugar unico de verdade das cores: os neutros abaixo sao
-   derivados do creme e do ambar, nada de cinza/azul de template. */
+/* Tokens do design system "Gestao de Produtos, Estoque e Vendas".
+   Os nomes sao os do sistema, nao apelidos nossos: quando ele mudar, a troca
+   e de valor, nao de nome. Tema claro unico -- nao ha dark aqui. */
+
+@font-face {
+  font-family: "Sora";
+  src: url("/assets/fonts/Sora-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Idiqlat";
+  src: url("/assets/fonts/Idiqlat-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
-  --creme: #fcf8eb;
-  --ambar: #bd6b08;
-  --ambar-escuro: #975406;
-  --verde: #5d7a26;
+  /* superficies */
+  --surface-page: #fff1e8;
+  --surface-card: #ffffff;
+  --surface-muted: #faf3ea;
+  --surface-sunken: #f3e7d6;
 
-  --superficie: #fffdf7;
-  --faixa: #f7f0dd;
-  --borda: #e6dcc0;
-  --texto: #33291a;
-  --texto-suave: #6b5c45;
-  --vermelho: #a3341a;
+  /* texto */
+  --ink: #2a2623;
+  --ink-muted: #675e54;
+  --ink-subtle: #8f857a;
+  --ink-on-accent: #2a2623;
+  --ink-on-green: #ffffff;
 
-  --raio: 6px;
-  --sombra: 0 1px 2px rgba(51, 41, 26, .07);
+  /* acao e marca */
+  --accent: #f77f00;
+  --accent-hover: #d96f00;
+  --accent-soft: #ffe3c2;
+  --green: #4b5d2c;
+  --green-hover: #3d4c23;
+  --green-soft: #e8ecda;
+
+  /* status */
+  --success: #4b5d2c;
+  --success-soft: #e8ecda;
+  --success-ink: #37461f;
+  --warning: #b5651d;
+  --warning-soft: #fbeacb;
+  --warning-ink: #8a4b12;
+  --danger: #b3402e;
+  --danger-hover: #9a3626;
+  --danger-soft: #f8e0da;
+  --danger-ink: #8f2f21;
+  --info: #2f6f7a;
+  --info-soft: #dcebec;
+  --info-ink: #22545d;
+
+  /* bordas */
+  --border: #ecdcc7;
+  --border-control: #97815d;
+  --focus-ring: #f77f00;
+  --scrim: rgba(42, 38, 35, .55);
+
+  /* tipografia */
+  --font-sans: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Idiqlat", "Sora", Georgia, serif;
+  --font-title: "Climate Crisis", "Idiqlat", system-ui, sans-serif;
+
+  --text-page-title: 400 34px/42px var(--font-title);
+  --text-h2: 700 22px/28px var(--font-sans);
+  --text-h3: 600 18px/24px var(--font-sans);
+  --text-h4: 600 15px/20px var(--font-sans);
+  --text-body: 400 15px/22px var(--font-sans);
+  --text-body-sm: 400 13px/18px var(--font-sans);
+  --text-caption: 500 12px/16px var(--font-sans);
+  --text-label: 600 13px/16px var(--font-sans);
+  --text-button: 600 14px/16px var(--font-sans);
+  --text-overline: 700 11px/14px var(--font-sans);
+
+  /* escala de 4px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* neubrutalist: canto reto, traco grosso, sombra dura sem blur */
+  --radius-pill: 999px;
+  --traco: 3px solid var(--ink);
+  --shadow-sm: 2px 2px 0 var(--ink);
+  --shadow-md: 4px 4px 0 var(--ink);
+  --shadow-lg: 6px 6px 0 var(--ink);
 }
 
 /* Alpine so processa o DOM depois do load; sem isto os elementos que nascem
@@ -27,11 +103,12 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--texto);
-  background: var(--creme);
+  /* desktop-only por decisao de escopo: sem media query de celular. O minimo
+     evita a tela espremer as tabelas de 8 colunas em vez de rolar. */
+  min-width: 1024px;
+  font: var(--text-body);
+  color: var(--ink);
+  background: var(--surface-page);
 }
 
 /* ------------------------------------------------------------------- topo */
@@ -39,92 +116,101 @@ body {
 .topo {
   display: flex;
   align-items: center;
-  gap: 32px;
-  padding: 14px 24px;
-  background: var(--superficie);
-  border-bottom: 2px solid var(--ambar);
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-card);
+  border-bottom: var(--traco);
 }
 
 .marca {
-  font-weight: 700;
-  font-size: 19px;
-  letter-spacing: .3px;
-  color: var(--ambar);
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink);
   text-decoration: none;
 }
 
 .menu {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .menu a {
-  padding: 6px 12px;
-  border-radius: var(--raio);
-  color: var(--texto-suave);
+  padding: var(--space-2) var(--space-3);
+  border: 3px solid transparent;
+  font: var(--text-button);
+  color: var(--ink-muted);
   text-decoration: none;
 }
 
 .menu a:hover {
-  background: var(--faixa);
-  color: var(--ambar);
+  border-color: var(--ink);
+  background: var(--accent-soft);
+  color: var(--ink);
 }
 
 /* ------------------------------------------------------------------ pagina */
 
 .conteudo {
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 28px 24px 60px;
+  padding: var(--space-6) var(--space-6) var(--space-8);
 }
 
+/* Climate Crisis SO aqui: o h1 do layout e o titulo da pagina, e o sistema
+   proibe essa familia em qualquer outro lugar. */
 h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 20px;
+  font: var(--text-page-title);
+  margin: 0 0 var(--space-5);
+}
+
+h2 {
+  font: var(--text-h2);
+  margin: var(--space-6) 0 var(--space-4);
 }
 
 .barra {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-5);
 }
 
 .barra .cresce { flex: 1; }
 
 .cartao {
-  background: var(--superficie);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  box-shadow: var(--sombra);
+  background: var(--surface-card);
+  border: var(--traco);
+  box-shadow: var(--shadow-md);
 }
 
 .vazio {
-  padding: 28px;
+  padding: var(--space-6);
   text-align: center;
-  color: var(--texto-suave);
+  color: var(--ink-muted);
 }
 
 /* ------------------------------------------------------------------ avisos */
 
 .aviso {
-  padding: 12px 16px;
-  margin-bottom: 18px;
-  border-left: 4px solid var(--ambar);
-  border-radius: var(--raio);
-  background: var(--faixa);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+  border: var(--traco);
+  box-shadow: var(--shadow-sm);
+  background: var(--accent-soft);
+  font: var(--text-h4);
 }
 
 .aviso-sucesso {
-  border-left-color: var(--verde);
+  background: var(--success-soft);
+  color: var(--success-ink);
 }
 
 .aviso-erro {
-  border-left-color: var(--vermelho);
-  color: var(--vermelho);
+  background: var(--danger-soft);
+  color: var(--danger-ink);
 }
 
 /* ----------------------------------------------------------------- tabelas */
@@ -141,22 +227,27 @@ h1 {
 
 .tabela th,
 .tabela td {
-  padding: 11px 16px;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
-  border-bottom: 1px solid var(--borda);
+  border-bottom: 1px solid var(--border);
 }
 
 .tabela th {
-  font-size: 13px;
-  font-weight: 600;
+  font: var(--text-overline);
   text-transform: uppercase;
   letter-spacing: .5px;
-  color: var(--texto-suave);
-  background: var(--faixa);
+  color: var(--ink-muted);
+  background: var(--surface-muted);
+  border-bottom: var(--traco);
+}
+
+/* zebra sutil: densidade confortavel sem pesar */
+.tabela tbody tr:nth-child(even) {
+  background: var(--surface-muted);
 }
 
 .tabela tbody tr:hover {
-  background: var(--creme);
+  background: var(--surface-sunken);
 }
 
 .tabela tr:last-child td {
@@ -166,18 +257,17 @@ h1 {
 .acoes {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: flex-end;
 }
 
-/* O verde tem uso raro de proposito: marca o ciclo que esta valendo hoje. */
 .selo-vigente {
   display: inline-block;
-  padding: 2px 9px;
-  border-radius: 999px;
-  font-size: 13px;
-  color: var(--verde);
-  background: rgba(93, 122, 38, .12);
+  padding: 1px var(--space-2);
+  border: 2px solid var(--ink);
+  font: var(--text-caption);
+  color: var(--success-ink);
+  background: var(--success-soft);
 }
 
 /* ----------------------------------------------------------------- botoes */
@@ -185,123 +275,263 @@ h1 {
 .botao {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border: 1px solid transparent;
-  border-radius: var(--raio);
-  font: inherit;
-  font-size: 15px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  border: var(--traco);
+  box-shadow: var(--shadow-sm);
+  font: var(--text-button);
   text-decoration: none;
   cursor: pointer;
+  /* o "afundar" do neubrutalist e a unica animacao do sistema */
+  transition: transform .06s, box-shadow .06s;
+}
+
+.botao:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.botao:focus-visible,
+.campo input:focus-visible,
+.campo select:focus-visible,
+.busca:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .botao-primario {
-  background: var(--ambar);
-  color: #fff;
+  background: var(--accent);
+  /* o laranja e claro: texto sobre ele e o ink, nunca branco */
+  color: var(--ink-on-accent);
 }
 
-.botao-primario:hover { background: var(--ambar-escuro); }
+.botao-primario:hover { background: var(--accent-hover); }
 
 .botao-contorno {
-  background: var(--superficie);
-  border-color: var(--borda);
-  color: var(--texto);
+  background: var(--surface-card);
+  color: var(--ink);
 }
 
-.botao-contorno:hover { border-color: var(--ambar); color: var(--ambar); }
+.botao-contorno:hover { background: var(--accent-soft); }
 
 .botao-perigo {
-  background: transparent;
-  color: var(--vermelho);
+  background: var(--surface-card);
+  color: var(--danger-ink);
 }
 
-.botao-perigo:hover { background: rgba(163, 52, 26, .09); }
+.botao-perigo:hover { background: var(--danger-soft); }
 
+/* terciario: sem traco e sem sombra de proposito, para nao competir */
 .botao-fantasma {
+  border-color: transparent;
+  box-shadow: none;
   background: transparent;
-  color: var(--texto-suave);
+  color: var(--ink-muted);
+}
+
+.botao-fantasma:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.botao:disabled,
+.botao[disabled] {
+  opacity: .45;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* ---------------------------------------------------------------- formulario */
 
 .form {
-  max-width: 640px;
-  padding: 24px;
+  max-width: 760px;
+  padding: var(--space-5);
 }
 
 .campo {
-  margin-bottom: 18px;
+  margin-bottom: var(--space-5);
 }
 
 .campo label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--texto-suave);
+  margin-bottom: var(--space-2);
+  font: var(--text-label);
+  color: var(--ink-muted);
 }
 
-.campo input {
+.campo input,
+.campo select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  font: inherit;
-  color: var(--texto);
-  background: #fff;
+  padding: var(--space-3);
+  border: var(--traco);
+  font: var(--text-body);
+  color: var(--ink);
+  background: var(--surface-muted);
 }
 
-.campo input:focus {
-  outline: 2px solid var(--ambar);
-  outline-offset: -1px;
-  border-color: var(--ambar);
+.campo input:focus,
+.campo select:focus {
+  background: var(--surface-card);
 }
 
-.campo-invalido input {
-  border-color: var(--vermelho);
+.campo-invalido input,
+.campo-invalido select {
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .erro {
-  margin: 6px 0 0;
-  font-size: 14px;
-  color: var(--vermelho);
+  margin: var(--space-2) 0 0;
+  font: var(--text-body-sm);
+  color: var(--danger-ink);
 }
 
 .dica {
-  margin: 6px 0 0;
-  font-size: 14px;
-  color: var(--texto-suave);
+  margin: var(--space-2) 0 0;
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
 }
 
 .dupla {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .dupla > * { flex: 1; }
 
-.busca {
-  padding: 9px 12px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  font: inherit;
-  background: var(--superficie);
-  min-width: 240px;
+/* input estreito das celulas de preco e desconto da venda */
+.curto {
+  width: 96px;
+  padding: var(--space-2);
+  border: 2px solid var(--ink);
+  font: var(--text-body-sm);
+  background: var(--surface-muted);
 }
 
-/* ------------------------------------------------------------------ mobile */
+.busca {
+  padding: var(--space-3);
+  border: var(--traco);
+  font: var(--text-body);
+  background: var(--surface-card);
+  min-width: 260px;
+}
 
-@media (max-width: 700px) {
-  .topo {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
+/* cartao de fechamento (totais do pedido e da venda) */
+.total {
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  background: var(--accent-soft);
+}
 
-  .dupla {
-    flex-direction: column;
-    gap: 0;
-  }
+.total p {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin: 0 0 var(--space-2);
+}
 
-  .busca { width: 100%; }
+.total p:last-child {
+  margin-bottom: 0;
+  font: var(--text-h3);
+}
+
+/* --------------------------------------------------------------- dashboard */
+
+/* faixa do ciclo: e o contexto de tudo, entao abre a pagina inteira */
+.faixa-ciclo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+  background: var(--accent-soft);
+}
+
+.faixa-alerta {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.faixa-titulo {
+  font: var(--text-h2);
+  margin: var(--space-1) 0;
+}
+
+.faixa-prazo {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.paineis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.indicador .rotulo {
+  flex: 1;
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
+}
+
+.indicador .botao {
+  margin-top: var(--space-2);
+}
+
+.overline {
+  margin: 0;
+  font: var(--text-overline);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.numero {
+  margin: 0;
+  font: var(--text-h2);
+  font-size: 28px;
+  line-height: 34px;
+}
+
+.faixa-prazo .numero {
+  display: block;
+  font-size: 40px;
+  line-height: 44px;
+}
+
+.faixa-prazo .rotulo {
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
+}
+
+/* selo de status: o par -soft (fundo) + -ink (texto) que o tema define */
+.selo {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 2px solid var(--ink);
+  font: var(--text-caption);
+}
+
+.selo-ok {
+  background: var(--success-soft);
+  color: var(--success-ink);
+}
+
+.selo-atencao {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.selo-perigo {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
 }

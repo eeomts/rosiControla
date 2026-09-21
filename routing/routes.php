@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Controla\Controllers\CicloController;
 use Controla\Controllers\ClienteController;
+use Controla\Controllers\DashboardController;
 use Controla\Controllers\PedidoController;
 use Controla\Controllers\ProdutoController;
 use Controla\Controllers\VendaController;
@@ -16,8 +17,7 @@ use Cubo\Routing\RouteCollection;
 
 $rotas = new RouteCollection();
 
-// A raiz ainda e a lista de ciclos, enquanto nao existe dashboard.
-$rotas->get('/', CicloController::class, 'index')->name('home');
+$rotas->get('/', DashboardController::class, 'index')->name('home');
 
 $rotas->get('/ciclo', CicloController::class, 'index')->name('ciclo.lista');
 $rotas->get('/ciclo/form', CicloController::class, 'form')->name('ciclo.novo');

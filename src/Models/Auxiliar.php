@@ -25,4 +25,11 @@ abstract class Auxiliar extends Model
     {
         return static::query()->ordenado()->pluck('nome', 'id')->all();
     }
+
+    public static function idPorNome(string $nome): ?int
+    {
+        $id = static::query()->where('nome', $nome)->value('id');
+
+        return $id === null ? null : (int) $id;
+    }
 }

@@ -2,6 +2,11 @@
 
 namespace Controla\Services;
 
+use Controla\Filtro\Campo;
+use Controla\Filtro\Definicao;
+use Controla\Filtro\Eloquent\AplicadorEloquent;
+use Controla\Filtro\Opcoes;
+use Controla\Filtro\Valores;
 use Controla\Models\Ciclo;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
@@ -111,12 +116,29 @@ final class PedidoService
         return $unidade;
     }
 
+    /** O que a tela de pedidos deixa filtrar. Fora daqui nao filtra. */
+    public function filtros(): Definicao
+    {
+        return new Definicao(
+            Campo::de('fk_ciclo', 'Ciclo', opcoes: Opcoes::deChamada(
+                static fn (): array => Ciclo::query()->maisRecente()->pluck('nome', 'id')->all()
+            )),
+            Campo::de('mon_total', 'Custo do pedido'),
+        );
+    }
+
     /**
      * @return Collection<int,Pedido>
      */
-    public function listar(): Collection
+    public function listar(?Valores $filtros = null): Collection
     {
-        return Pedido::query()->maisRecente()->get();
+        $consulta = Pedido::query()->maisRecente();
+
+        if ($filtros !== null) {
+            (new AplicadorEloquent())->aplicar($this->filtros(), $filtros, $consulta);
+        }
+
+        return $consulta->get();
     }
 
     /**

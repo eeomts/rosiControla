@@ -758,3 +758,39 @@ h2 {
   text-align: center;
   font: var(--text-h4);
 }
+
+/* ----------------------------------------------------------- barra de filtros */
+
+/* desenhada pelo componentes/filtro.php a partir da Definicao da tela */
+.filtros {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  background: var(--surface-card);
+  border: var(--traco);
+  box-shadow: var(--shadow-sm);
+}
+
+/* o .campo de formulario empurra 24px pra baixo; aqui as linhas ja sao a barra */
+.filtros .campo {
+  margin-bottom: 0;
+}
+
+.filtro-faixa {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filtro-faixa input {
+  width: auto;
+}
+
+.filtro-acoes {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}

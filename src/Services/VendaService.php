@@ -2,6 +2,11 @@
 
 namespace Controla\Services;
 
+use Controla\Filtro\Campo;
+use Controla\Filtro\Definicao;
+use Controla\Filtro\Eloquent\AplicadorEloquent;
+use Controla\Filtro\Opcoes;
+use Controla\Filtro\Valores;
 use Controla\Models\Cliente;
 use Controla\Models\Pedido;
 use Controla\Models\StatusEntrega;
@@ -69,9 +74,36 @@ final class VendaService
     /**
      * @return Collection<int,Venda>
      */
-    public function listar(): Collection
+    /** O que a tela de vendas deixa filtrar. Fora daqui nao filtra. */
+    public function filtros(): Definicao
     {
-        return Venda::query()->maisRecente()->get();
+        return new Definicao(
+            Campo::de('data_venda', 'Vendido entre'),
+            Campo::de('mon_total', 'Valor'),
+            Campo::de('fk_status_pagamento', 'Pagamento', opcoes: Opcoes::deChamada(
+                static fn (): array => StatusPagamento::paraSelect()
+            )),
+            Campo::de('fk_status_entrega', 'Entrega', opcoes: Opcoes::deChamada(
+                static fn (): array => StatusEntrega::paraSelect()
+            )),
+            Campo::de('fk_cliente', 'Cliente', opcoes: Opcoes::deChamada(
+                static fn (): array => Cliente::query()->ordenado()->pluck('nome', 'id')->all()
+            )),
+        );
+    }
+
+    /**
+     * @return Collection<int,Venda>
+     */
+    public function listar(?Valores $filtros = null): Collection
+    {
+        $consulta = Venda::query()->maisRecente();
+
+        if ($filtros !== null) {
+            (new AplicadorEloquent())->aplicar($this->filtros(), $filtros, $consulta);
+        }
+
+        return $consulta->get();
     }
 
     /**

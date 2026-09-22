@@ -38,6 +38,17 @@ final class Entrada
         return (array) $this->request->post();
     }
 
+    /**
+     * A query string inteira, que e por onde os filtros viajam (GET, para a
+     * tela filtrada virar um endereco).
+     *
+     * @return array<string,mixed>
+     */
+    public function query(): array
+    {
+        return (array) $this->request->get();
+    }
+
     public function texto(string $campo, string $default = ''): string
     {
         $valor = $this->valor($campo);

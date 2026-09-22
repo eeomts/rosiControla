@@ -3,6 +3,7 @@
 namespace Controla\Controllers;
 
 use Controla\Controllers\Base\FeatureController;
+use Controla\Filtro\Valores;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
 use Controla\Services\ProdutoService;
@@ -119,8 +120,13 @@ final class ProdutoController extends FeatureController
      */
     private function tela(bool $modalAberto, ?int $id, array $valores, array $erros): void
     {
+        $definicao = $this->service->filtros();
+        $filtros = Valores::deRequest($this->request->query(), $definicao);
+
         $this->pagina('Produtos', 'produto/lista.php', [
-            'produtos' => $this->service->listar()->load('genero'),
+            'produtos' => $this->service->listar(null, $filtros)->load('genero'),
+            'filtro_definicao' => $definicao,
+            'filtro_valores' => $filtros,
             'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,

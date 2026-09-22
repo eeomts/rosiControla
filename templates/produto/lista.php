@@ -26,6 +26,8 @@ foreach ($produtos as $produto) {
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
+    <?php include __DIR__ . '/../componentes/filtro.php'; ?>
+
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, codigo ou genero">
         <button type="button" class="botao botao-primario" @click="abrir()">Novo produto</button>

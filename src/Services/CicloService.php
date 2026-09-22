@@ -2,6 +2,11 @@
 
 namespace Controla\Services;
 
+use Controla\Filtro\Campo;
+use Controla\Filtro\Definicao;
+use Controla\Filtro\Eloquent\AplicadorEloquent;
+use Controla\Filtro\Opcoes;
+use Controla\Filtro\Valores;
 use Controla\Models\Ciclo;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Normalizacao;
@@ -42,11 +47,46 @@ final class CicloService
     }
 
     /**
+     * O que esta tela deixa filtrar. Fora daqui nao filtra.
+     *
+     * O ano vira lista em vez de campo livre: so aparecem os anos que existem,
+     * entao ela nao consegue pesquisar um ano vazio.
+     */
+    public function filtros(): Definicao
+    {
+        return new Definicao(
+            Campo::de('num_ano', 'Ano', opcoes: Opcoes::deChamada($this->anos(...))),
+            Campo::de('data_inicio', 'Comeca entre'),
+        );
+    }
+
+    /**
      * @return Collection<int,Ciclo>
      */
-    public function listar(): Collection
+    public function listar(?Valores $filtros = null): Collection
     {
-        return Ciclo::query()->maisRecente()->get();
+        $consulta = Ciclo::query()->maisRecente();
+
+        if ($filtros !== null) {
+            (new AplicadorEloquent())->aplicar($this->filtros(), $filtros, $consulta);
+        }
+
+        return $consulta->get();
+    }
+
+    /**
+     * Os anos que realmente tem ciclo, do mais novo para o mais velho.
+     *
+     * @return array<int,string>
+     */
+    private function anos(): array
+    {
+        $anos = Ciclo::query()->distinct()->orderByDesc('num_ano')->pluck('num_ano')->all();
+
+        return array_combine(
+            array_map('intval', $anos),
+            array_map('strval', $anos)
+        );
     }
 
     /**

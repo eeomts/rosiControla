@@ -3,6 +3,7 @@
 namespace Controla\Controllers;
 
 use Controla\Controllers\Base\FeatureController;
+use Controla\Filtro\Valores;
 use Controla\Models\Ciclo;
 use Controla\Services\CicloService;
 use Controla\Utils\Exceptions\DadosInvalidosException;
@@ -94,8 +95,15 @@ final class CicloController extends FeatureController
      */
     private function tela(bool $modalAberto, ?int $id, array $valores, array $erros): void
     {
+        # os filtros viajam por GET, entao valem em qualquer tela da feature: o
+        # POST que volta com erro de validacao nao perde o que ela filtrou
+        $definicao = $this->service->filtros();
+        $filtros = Valores::deRequest($this->request->query(), $definicao);
+
         $this->pagina('Ciclos', 'ciclo/lista.php', [
-            'ciclos' => $this->service->listar(),
+            'ciclos' => $this->service->listar($filtros),
+            'filtro_definicao' => $definicao,
+            'filtro_valores' => $filtros,
             'hoje' => Date::now('Y-m-d'),
             'modal_aberto' => $modalAberto,
             'id' => $id,

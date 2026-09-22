@@ -3,6 +3,7 @@
 namespace Controla\Controllers;
 
 use Controla\Controllers\Base\FeatureController;
+use Controla\Filtro\Valores;
 use Controla\Models\Ciclo;
 use Controla\Models\Pedido;
 use Controla\Models\Produto;
@@ -176,8 +177,13 @@ final class PedidoController extends FeatureController
         array $erros,
         ?Pedido $pedido = null
     ): void {
+        $definicao = $this->service->filtros();
+        $filtros = Valores::deRequest($this->request->query(), $definicao);
+
         $this->pagina('Pedidos', 'pedido/lista.php', [
-            'pedidos' => $this->service->listar()->load('ciclo'),
+            'pedidos' => $this->service->listar($filtros)->load('ciclo'),
+            'filtro_definicao' => $definicao,
+            'filtro_valores' => $filtros,
             'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,

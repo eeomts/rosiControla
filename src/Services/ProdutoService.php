@@ -2,6 +2,11 @@
 
 namespace Controla\Services;
 
+use Controla\Filtro\Campo;
+use Controla\Filtro\Definicao;
+use Controla\Filtro\Eloquent\AplicadorEloquent;
+use Controla\Filtro\Opcoes;
+use Controla\Filtro\Valores;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Models\Genero;
@@ -53,9 +58,25 @@ final class ProdutoService
      * @param string|null $termo Filtra por nome ou codigo; vazio traz todos.
      * @return Collection<int,Produto>
      */
-    public function listar(?string $termo = null): Collection
+    /** O que a tela de produtos deixa filtrar. Fora daqui nao filtra. */
+    public function filtros(): Definicao
     {
-        return Produto::query()->busca((string) $termo)->ordenado()->get();
+        return new Definicao(
+            Campo::de('fk_genero', 'Genero', opcoes: Opcoes::deChamada(
+                static fn (): array => Genero::paraSelect()
+            )),
+        );
+    }
+
+    public function listar(?string $termo = null, ?Valores $filtros = null): Collection
+    {
+        $consulta = Produto::query()->busca((string) $termo)->ordenado();
+
+        if ($filtros !== null) {
+            (new AplicadorEloquent())->aplicar($this->filtros(), $filtros, $consulta);
+        }
+
+        return $consulta->get();
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Controla\Controllers;
 
 use Controla\Controllers\Base\FeatureController;
+use Controla\Filtro\Valores;
 use Controla\Models\Cliente;
 use Controla\Models\StatusEntrega;
 use Controla\Models\StatusPagamento;
@@ -103,8 +104,13 @@ final class VendaController extends FeatureController
         array $itens,
         ?Venda $venda
     ): void {
+        $definicao = $this->service->filtros();
+        $filtros = Valores::deRequest($this->request->query(), $definicao);
+
         $this->pagina('Vendas', 'venda/lista.php', [
-            'vendas' => $this->service->listar()->load(['cliente', 'statusPagamento', 'statusEntrega']),
+            'vendas' => $this->service->listar($filtros)->load(['cliente', 'statusPagamento', 'statusEntrega']),
+            'filtro_definicao' => $definicao,
+            'filtro_valores' => $filtros,
             'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,

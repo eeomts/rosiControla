@@ -32,6 +32,8 @@ foreach ($vendas as $venda) {
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
+    <?php include __DIR__ . '/../componentes/filtro.php'; ?>
+
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por cliente, data ou status">
         <a class="botao botao-primario" href="/venda/form">Nova venda</a>

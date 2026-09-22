@@ -27,6 +27,8 @@ foreach ($pedidos as $pedido) {
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
+    <?php include __DIR__ . '/../componentes/filtro.php'; ?>
+
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, ciclo ou data">
         <a class="botao botao-primario" href="/pedido/form">Novo pedido</a>

@@ -4,6 +4,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $produtos = $view->getParam('produtos', []);
@@ -70,6 +71,7 @@ foreach ($produtos as $produto) {
                                         x-data="confirmacao"
                                         @submit="armar($event)"
                                         @click.outside="cancelar()">
+                                        <?= Csrf::daGlobal()->campo() ?>
                                         <input type="hidden" name="id" value="<?= (int) $produto->id ?>">
                                         <button class="botao botao-perigo" x-text="confirmando ? 'Excluir mesmo?' : 'Excluir'">Excluir</button>
                                         <button type="button" class="botao botao-fantasma" x-show="confirmando" x-cloak @click="cancelar()">Cancelar</button>
@@ -89,6 +91,7 @@ foreach ($produtos as $produto) {
 </div>
 
 <?php
+
 $modalTitulo = $id === null ? 'Novo produto' : 'Editar produto';
 $modalCorpo = 'produto/form.php';
 $modalTamanho = 'md';

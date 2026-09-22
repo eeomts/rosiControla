@@ -5,6 +5,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Controla\Utils\Moeda;
 use Cubo\Security;
 
@@ -64,6 +65,7 @@ $aviso = (string) $view->getParam('aviso', '');
                                 <div class="contador">
                                     <!-- tira UMA unidade: a primeira do grupo que ainda nao saiu -->
                                     <form method="post" action="/pedido/remover" data-fragmento>
+                                        <?= Csrf::daGlobal()->campo() ?>
                                         <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
                                         <input type="hidden" name="unidade" value="<?= (int) ($grupo['disponiveis'][0] ?? 0) ?>">
                                         <button class="botao botao-contorno" title="Tirar uma unidade"
@@ -75,6 +77,7 @@ $aviso = (string) $view->getParam('aviso', '');
 
                                     <!-- repete a MESMA unidade: mesmo produto, validade e precos -->
                                     <form method="post" action="/pedido/adicionar" data-fragmento>
+                                        <?= Csrf::daGlobal()->campo() ?>
                                         <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
                                         <input type="hidden" name="fk_produto" value="<?= (int) $grupo['fk_produto'] ?>">
                                         <input type="hidden" name="quantidade" value="1">

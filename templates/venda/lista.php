@@ -4,6 +4,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Controla\Utils\Moeda;
 use Cubo\Security;
 
@@ -89,6 +90,7 @@ foreach ($vendas as $venda) {
                                         x-data="confirmacao"
                                         @submit="armar($event)"
                                         @click.outside="cancelar()">
+                                        <?= Csrf::daGlobal()->campo() ?>
                                         <input type="hidden" name="id" value="<?= (int) $venda->id ?>">
                                         <button class="botao botao-perigo" x-text="confirmando ? 'Excluir mesmo?' : 'Excluir'">Excluir</button>
                                         <button type="button" class="botao botao-fantasma" x-show="confirmando" x-cloak @click="cancelar()">Cancelar</button>

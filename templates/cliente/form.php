@@ -6,6 +6,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $id = $view->getParam('id');
@@ -24,6 +25,8 @@ $json = static fn(string $campo): string => json_encode((string) ($valores[$camp
   porque o ClienteService joga fora tudo que nao e digito antes de gravar.
 -->
 <form method="post" action="/cliente/salvar" x-data='telefone(<?= $json('telefone') ?>)'>
+
+       <?= Csrf::daGlobal()->campo() ?>
 
        <div class="modal-corpo">
 

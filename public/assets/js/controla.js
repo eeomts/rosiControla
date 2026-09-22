@@ -25,6 +25,9 @@ const Moeda = {
     },
 }
 
+/** O token que o CsrfMiddleware exige; o layout deixa numa <meta>. */
+const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || ''
+
 /** Tab nao sai da caixa: sem isto o foco cai no que esta atras do scrim. */
 const prenderFoco = (caixa, evento) => {
     const focaveis = caixa?.querySelectorAll(
@@ -266,7 +269,12 @@ document.addEventListener('alpine:init', () => {
             try {
                 const resposta = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        // sem ele, um 419 viria como pagina HTML e o json() abaixo quebraria
+                        'X-Requested-With': 'fetch',
+                        'X-CSRF-Token': csrf(),
+                    },
                     body: new URLSearchParams({ nome: this.nome }),
                 })
 
@@ -331,11 +339,17 @@ document.addEventListener('alpine:init', () => {
             try {
                 const resposta = await fetch(form.action, {
                     method: 'POST',
-                    headers: { 'X-Requested-With': 'fetch' },
+                    headers: { 'X-Requested-With': 'fetch', 'X-CSRF-Token': csrf() },
                     body: new URLSearchParams(new FormData(form)),
                 })
 
                 const html = await resposta.text()
+
+                // o middleware do Csrf responde JSON, nao o pedaco de tela
+                if (resposta.headers.get('content-type')?.includes('json')) {
+                    this.falha = JSON.parse(html).erro || 'Nao deu para atualizar.'
+                    return
+                }
 
                 if (html.trim() === '') {
                     this.falha = 'Nao deu para atualizar. Tente de novo.'

@@ -4,6 +4,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $id = $view->getParam('id');
@@ -23,6 +24,7 @@ $selecionado = static fn(string $campo, $chave): string
 <div class="modal-corpo">
 
 <form method="post" action="/pedido/salvar">
+       <?= Csrf::daGlobal()->campo() ?>
 
        <?php if ($id !== null): ?>
               <input type="hidden" name="id" value="<?= (int) $id ?>">
@@ -87,6 +89,7 @@ $selecionado = static fn(string $campo, $chave): string
 
        <!-- data-limpar: deu certo, o form zera para o proximo produto -->
        <form method="post" action="/pedido/adicionar" data-fragmento data-limpar>
+              <?= Csrf::daGlobal()->campo() ?>
               <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
 
               <div class="campo <?= $erro('fk_produto') !== '' ? 'campo-invalido' : '' ?>">

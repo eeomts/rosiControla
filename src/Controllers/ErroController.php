@@ -17,7 +17,11 @@ final class ErroController extends FeatureController
         ]);
     }
 
-    /** O caminho existe, mas nao sob o verbo pedido (405). */
+    public function sessao(): void
+    {
+        $this->pagina('A pagina expirou', 'erro/419.php');
+    }
+
     public function metodo(): void
     {
         $this->pagina('Essa pagina nao abre direto', 'erro/405.php');

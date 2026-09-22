@@ -10,6 +10,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $ciclos = $view->getParam('ciclos', []);
@@ -87,6 +88,7 @@ foreach ($ciclos as $ciclo) {
                                             x-data="confirmacao"
                                             @submit="armar($event)"
                                             @click.outside="cancelar()">
+                                            <?= Csrf::daGlobal()->campo() ?>
                                             <input type="hidden" name="id" value="<?= (int) $ciclo->id ?>">
                                             <button class="botao botao-perigo" x-text="confirmando ? 'Excluir mesmo?' : 'Excluir'">Excluir</button>
                                             <button type="button" class="botao botao-fantasma" x-show="confirmando" x-cloak @click="cancelar()">Cancelar</button>

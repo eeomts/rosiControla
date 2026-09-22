@@ -11,6 +11,7 @@
 
 declare(strict_types=1);
 
+use Controla\Middleware\CsrfMiddleware;
 use Controla\Middleware\NaoEncontradoMiddleware;
 use Cubo\Cubo;
 
@@ -20,4 +21,5 @@ require $raiz . '/vendor/autoload.php';
 
 (new Cubo(appRoot: $raiz))
     ->middleware(NaoEncontradoMiddleware::class)
+    ->middleware(CsrfMiddleware::class)
     ->run();

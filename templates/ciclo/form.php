@@ -6,6 +6,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $id = $view->getParam('id');
@@ -22,6 +23,8 @@ $json = static fn(string $campo): string => json_encode((string) ($valores[$camp
 <form method="post" action="/ciclo/salvar" x-data='cicloForm(
        <?= $json('num_ciclo') ?>, <?= $json('data_inicio') ?>, <?= $json('data_termino') ?>
 )'>
+
+       <?= Csrf::daGlobal()->campo() ?>
 
        <div class="modal-corpo">
 

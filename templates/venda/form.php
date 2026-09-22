@@ -4,6 +4,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $id = $view->getParam('id');
@@ -37,7 +38,8 @@ $selecionado = static fn(string $campo, $chave): string
 ?>
 <!-- o componente mora em /js/venda-form.js -->
 <form method="post" action="/venda/salvar" x-data='vendaForm(
-       <?= json_encode($estoque, $emAtributo) ?>,
+       <?= json_encode($estoque, $emAtributo) ?>
+       <?= Csrf::daGlobal()->campo() ?>,
        <?= json_encode($itens, $emAtributo) ?>,
        <?= json_encode((string) ($valores['mon_desconto'] ?? '0,00'), $emAtributo) ?>
 )'>

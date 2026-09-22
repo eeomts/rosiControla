@@ -6,6 +6,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 
 $id = $view->getParam('id');
@@ -21,6 +22,7 @@ $selecionado = static fn(string $campo, $chave): string
 
 ?>
 <form method="post" action="/produto/salvar">
+       <?= Csrf::daGlobal()->campo() ?>
 
        <div class="modal-corpo">
 

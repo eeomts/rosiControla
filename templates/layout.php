@@ -4,14 +4,14 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Csrf;
 use Cubo\Security;
 use Cubo\Tools\Date;
 
 $rota = '/' . trim((string) $view->getParam('rota', '/'), '/');
 $usuario = (string) $view->getParam('usuario', '');
 
-// o inicio so casa exato; o resto casa o comeco do caminho, para /ciclo/form
-// manter "Ciclos" aceso
+
 $itens = [
     '/' => 'Inicio',
     '/ciclo' => 'Ciclos',
@@ -22,8 +22,7 @@ $itens = [
     '/conta' => 'Contas',
 ];
 
-// o Caddy manda o navegador guardar css/js por 30 dias; com a data do arquivo
-// na URL, mudou o arquivo, mudou a URL, e o navegador busca de novo
+
 $versao = static function (string $caminho): string {
     $arquivo = __DIR__ . '/../public' . $caminho;
 
@@ -56,7 +55,10 @@ $saudacao = match (true) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $view->escape('titulo') ?> - <?= $view->escape('sistema') ?></title>
-    <!-- o .ico fica para quem nao aceita svg (Safari); quem aceita usa o R -->
+    
+    <!-- o fetch le daqui e manda no cabecalho X-CSRF-Token -->
+    <meta name="csrf-token" content="<?= Security::escape(Csrf::daGlobal()->token()) ?>">
+
     <link rel="icon" href="/favicon.ico" sizes="16x16">
     <link rel="icon" type="image/svg+xml" href="<?= $versao('/assets/img/favicon.svg') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">

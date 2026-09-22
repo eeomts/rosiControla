@@ -6,17 +6,6 @@ use Cubo\Http\Request;
 use Cubo\Routing\Route;
 
 /**
- * O que a tela mandou, ja convertido para o tipo que o controlador usa.
- *
- * Existe porque o Cubo\Http\Request e o Cubo\Routing\Route respondem meia
- * pergunta cada um: o Request sabe do corpo e da query, a Route sabe dos
- * parametros do caminho ('/ciclo/form/12'). O controlador quer perguntar
- * "quanto vale id" sem saber por onde o valor chegou -- e esta classe e o unico
- * lugar do Controla que conhece as duas fontes.
- *
- * Converter aqui, e nao no controlador, evita o (int) espalhado por sete telas:
- * campo em branco, texto e zero viram null do mesmo jeito em todas elas.
- *
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
@@ -33,8 +22,15 @@ final class Entrada
     }
 
     /**
-     * Campos do POST, crus, do jeito que os Services esperam receber.
-     *
+     * O JS pediu so um pedaco da tela (ele marca o fetch com este cabecalho).
+     * Sem ele, a resposta continua sendo o redirect de sempre.
+     */
+    public function querFragmento(): bool
+    {
+        return $this->request->header('X-Requested-With') === 'fetch';
+    }
+
+    /**
      * @return array<string,mixed>
      */
     public function corpo(): array
@@ -50,8 +46,7 @@ final class Entrada
     }
 
     /**
-     * Linhas de um campo repetido (os itens da venda, as unidades do pedido).
-     *
+
      * @return list<array<string,mixed>>
      */
     public function linhas(string $campo): array
@@ -65,9 +60,6 @@ final class Entrada
         return array_values(array_filter($valor, 'is_array'));
     }
 
-    /**
-     * Id positivo, ou null quando nao veio, veio vazio ou nao e numero.
-     */
     public function inteiroOuNulo(string $campo): ?int
     {
         $valor = $this->valor($campo);
@@ -81,7 +73,7 @@ final class Entrada
         return $inteiro > 0 ? $inteiro : null;
     }
 
-    /** Corpo e query primeiro; o parametro do caminho e o ultimo recurso. */
+    
     private function valor(string $campo): mixed
     {
         return $this->request->input($campo) ?? $this->route?->params[$campo] ?? null;

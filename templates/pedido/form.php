@@ -4,14 +4,12 @@
  * @var Cubo\View\View $view
  */
 
-use Controla\Utils\Moeda;
 use Cubo\Security;
 
 $id = $view->getParam('id');
 $valores = (array) $view->getParam('valores', []);
 $erros = (array) $view->getParam('erros', []);
 $pedido = $view->getParam('pedido');
-$unidades = (array) $view->getParam('unidades', []);
 $ciclos = (array) $view->getParam('ciclos', []);
 $produtos = (array) $view->getParam('produtos', []);
 
@@ -81,9 +79,14 @@ $selecionado = static fn(string $campo, $chave): string
 
        <!-- ------------------------------------------------- os produtos -->
 
+       <!-- lancar e o +/- postam por fetch; o servidor devolve so o unidades.php, trocado no x-ref=alvo -->
+       <div x-data="unidadesPedido" @submit="enviar($event)">
+       <p class="erro" x-show="falha" x-text="falha" x-cloak></p>
+
        <h2>Lancar produto</h2>
 
-       <form method="post" action="/pedido/adicionar">
+       <!-- data-limpar: deu certo, o form zera para o proximo produto -->
+       <form method="post" action="/pedido/adicionar" data-fragmento data-limpar>
               <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
 
               <div class="campo <?= $erro('fk_produto') !== '' ? 'campo-invalido' : '' ?>">
@@ -147,7 +150,8 @@ $selecionado = static fn(string $campo, $chave): string
               </div>
 
               <div class="barra">
-                     <button class="botao botao-primario" type="submit">Adicionar ao pedido</button>
+                     <button class="botao botao-primario" type="submit" :disabled="ocupado">Adicionar ao pedido</button>
+                     <span class="dica" x-show="recado" x-text="recado" x-cloak></span>
               </div>
        </form>
 
@@ -155,77 +159,10 @@ $selecionado = static fn(string $campo, $chave): string
 
        <h2>No pedido</h2>
 
-       <?php if ($unidades === []): ?>
-
-              <div class="cartao vazio">
-                     <p>Nenhum produto lancado neste pedido ainda.</p>
+              <div x-ref="alvo">
+                     <?php include __DIR__ . "/unidades.php"; ?>
               </div>
-
-       <?php else: ?>
-
-              <div class="cartao rolagem">
-                     <table class="tabela">
-                            <thead>
-                                   <tr>
-                                          <th>Produto</th>
-                                          <th>Qtd</th>
-                                          <th>Validade</th>
-                                          <th>Custo</th>
-                                          <th>Venda</th>
-                                          <th>Vendidas</th>
-                                          <th></th>
-                                   </tr>
-                            </thead>
-                            <tbody>
-                                   <?php foreach ($unidades as $grupo): ?>
-                                          <tr>
-                                                 <td><?= Security::escape((string) $grupo['produto']) ?></td>
-                                                 <td>
-                                                        <div class="contador">
-                                                               <!-- tira UMA unidade: a primeira do grupo que ainda nao saiu -->
-                                                               <form method="post" action="/pedido/remover">
-                                                                      <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
-                                                                      <input type="hidden" name="unidade" value="<?= (int) ($grupo['disponiveis'][0] ?? 0) ?>">
-                                                                      <button class="botao botao-contorno" title="Tirar uma unidade"
-                                                                             <?= $grupo['disponiveis'] === [] ? 'disabled' : '' ?>>&minus;</button>
-                                                               </form>
-
-                                                               <span class="contador-numero"><?= count($grupo['ids']) ?></span>
-
-                                                               <!-- repete a MESMA unidade: mesmo produto, validade e precos -->
-                                                               <form method="post" action="/pedido/adicionar">
-                                                                      <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
-                                                                      <input type="hidden" name="fk_produto" value="<?= (int) $grupo['fk_produto'] ?>">
-                                                                      <input type="hidden" name="quantidade" value="1">
-                                                                      <input type="hidden" name="data_validade" value="<?= Security::escape((string) $grupo['validade']) ?>">
-                                                                      <input type="hidden" name="mon_custo" value="<?= Security::escape((string) $grupo['custo']) ?>">
-                                                                      <input type="hidden" name="mon_venda" value="<?= Security::escape((string) $grupo['venda']) ?>">
-                                                                      <button class="botao botao-contorno" title="Adicionar mais uma">+</button>
-                                                               </form>
-                                                        </div>
-                                                 </td>
-                                                 <td><?= Security::escape((string) $grupo['validade']) ?: '-' ?></td>
-                                                 <td>R$ <?= Moeda::brl($grupo['custo']) ?></td>
-                                                 <td>R$ <?= Moeda::brl($grupo['venda']) ?></td>
-                                                 <td><?= (int) $grupo['vendidas'] ?></td>
-                                                 <td>
-                                                        <?php if ($grupo['disponiveis'] === []): ?>
-                                                               <span class="dica">todas vendidas</span>
-                                                        <?php endif; ?>
-                                                 </td>
-                                          </tr>
-                                   <?php endforeach; ?>
-                            </tbody>
-                     </table>
-              </div>
-
-              <div class="cartao total">
-                     <p>Custo do pedido: <strong>R$ <?= Moeda::brl($pedido->mon_total) ?></strong></p>
-                     <p>Lucro estimado: <strong>R$ <?= Moeda::brl($pedido->mon_lucro_estimado) ?></strong></p>
-                     <p>Lucro real ate agora: <strong>R$ <?= Moeda::brl($pedido->mon_lucro_real) ?></strong></p>
-              </div>
-
-       <?php endif; ?>
+       </div>
 
 <?php endif; ?>
 

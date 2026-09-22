@@ -10,6 +10,7 @@ use Controla\Services\PedidoService;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Utils\Redirecionamento;
+use Controla\Views\FragmentoView;
 use RuntimeException;
 
 /**
@@ -84,12 +85,31 @@ final class PedidoController extends FeatureController
             $pedido = $this->service->encontrar($id);
             $unidades = $this->service->adicionarProduto($pedido, $this->request->corpo());
         } catch (DadosInvalidosException $e) {
+            if ($this->request->querFragmento()) {
+                $this->fragmentoUnidades($id, implode(' ', $e->erros()), 422);
+
+                return;
+            }
+
             $this->tela(true, $id, $this->valoresDe($this->service->encontrar($id)), $e->erros(), $this->pedidoOuNulo($id));
 
             return;
         } catch (RuntimeException) {
+            if ($this->request->querFragmento()) {
+                $this->fragmentoUnidades(null, 'Esse pedido nao existe mais.', 404);
+
+                return;
+            }
+
             $this->flash->erro('Esse pedido nao existe mais.');
             Redirecionamento::para(self::URL_LISTA)->enviar();
+
+            return;
+        }
+
+        // o +/- so quer o "No pedido" de novo; o contador ja e o recado
+        if ($this->request->querFragmento()) {
+            $this->fragmentoUnidades($pedido->id);
 
             return;
         }
@@ -102,15 +122,28 @@ final class PedidoController extends FeatureController
     public function remover(): void
     {
         $pedidoId = $this->request->inteiroOuNulo('id');
+        $aviso = '';
 
         try {
             $unidade = $this->service->encontrarUnidade($this->request->inteiroOuNulo('unidade'));
             $this->service->removerUnidade($unidade);
-            $this->flash->sucesso('Unidade removida.');
         } catch (RegistroEmUsoException $e) {
-            $this->flash->erro($e->getMessage());
+            $aviso = $e->getMessage();
         } catch (RuntimeException) {
-            $this->flash->erro('Essa unidade nao existe mais.');
+            $aviso = 'Essa unidade nao existe mais.';
+        }
+
+        if ($this->request->querFragmento()) {
+            // 200 mesmo com aviso: a tabela nova ja mostra o estado certo
+            $this->fragmentoUnidades($pedidoId, $aviso);
+
+            return;
+        }
+
+        if ($aviso === '') {
+            $this->flash->sucesso('Unidade removida.');
+        } else {
+            $this->flash->erro($aviso);
         }
 
         Redirecionamento::para(self::URL_LISTA . '/form/' . (int) $pedidoId)->enviar();
@@ -156,6 +189,19 @@ final class PedidoController extends FeatureController
             'ciclos' => $modalAberto ? Ciclo::query()->maisRecente()->pluck('nome', 'id')->all() : [],
             'produtos' => $modalAberto ? Produto::query()->ordenado()->pluck('nome', 'id')->all() : [],
         ]);
+    }
+
+    /** So o "No pedido" (pedido/unidades.php), sem layout: resposta do +/-. */
+    private function fragmentoUnidades(?int $id, string $aviso = '', int $status = 200): void
+    {
+        $pedido = $this->pedidoOuNulo($id);
+
+        $view = new FragmentoView('pedido/unidades.php', $pedido === null ? 404 : $status);
+        $view->addParam('pedido', $pedido);
+        $view->addParam('unidades', $pedido === null ? [] : $this->service->unidadesAgrupadas($pedido));
+        $view->addParam('aviso', $aviso);
+
+        $this->setView($view);
     }
 
     /** @return array<string,string> */

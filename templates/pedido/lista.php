@@ -56,14 +56,14 @@ foreach ($pedidos as $pedido) {
                 </thead>
                 <tbody>
                     <?php foreach ($pedidos as $pedido): ?>
-                        <tr data-busca="<?= Security::escape($termos[$pedido->id]) ?>" x-show="casa($el)">
+                        <tr data-busca="<?= Security::escape($termos[$pedido->id]) ?>" data-pedido="<?= (int) $pedido->id ?>" x-show="casa($el)">
                             <td><?= Security::escape((string) $pedido->nome) ?></td>
                             <td><?= Security::escape((string) $pedido->ciclo?->nome) ?></td>
                             <td><?= Security::escape((string) $pedido->data_pedido?->format('d/m/Y')) ?></td>
-                            <td><?= (int) $pedido->variacoes()->count() ?></td>
-                            <td>R$ <?= Moeda::brl($pedido->mon_total) ?></td>
-                            <td>R$ <?= Moeda::brl($pedido->mon_lucro_estimado) ?></td>
-                            <td>R$ <?= Moeda::brl($pedido->mon_lucro_real) ?></td>
+                            <td data-coluna="unidades"><?= (int) $pedido->variacoes()->count() ?></td>
+                            <td data-coluna="total">R$ <?= Moeda::brl($pedido->mon_total) ?></td>
+                            <td data-coluna="lucro-estimado">R$ <?= Moeda::brl($pedido->mon_lucro_estimado) ?></td>
+                            <td data-coluna="lucro-real">R$ <?= Moeda::brl($pedido->mon_lucro_real) ?></td>
                             <td>
                                 <div class="acoes">
                                     <a class="botao botao-contorno" href="/pedido/form/<?= (int) $pedido->id ?>">Abrir</a>

@@ -1,9 +1,3 @@
-/**
- * Componentes Alpine reaproveitados pelas telas do Controla.
- * @author Mateus - github.com/eeomts
- */
-
-/** O texto que ela digita ("39,90") de um lado, numero do outro. */
 const Moeda = {
     valor(texto) {
         const limpo = String(texto)
@@ -264,6 +258,107 @@ document.addEventListener('alpine:init', () => {
 
             // o x-model de quem escuta o select so percebe pelo evento
             select.dispatchEvent(new Event('change'))
+        },
+    }))
+
+    /**
+     * O lancar e o +/- do pedido sem recarregar: o servidor devolve o "No pedido" pronto
+     * (pedido/unidades.php) e ele so troca de lugar. Nada de moeda em JS.
+     */
+    Alpine.data('unidadesPedido', () => ({
+        ocupado: false,
+        falha: '',
+        recado: '',
+
+        async enviar(evento) {
+            const form = evento.target
+
+            if (!form.matches('[data-fragmento]')) {
+                return
+            }
+
+            evento.preventDefault()
+
+            // clique repetido enquanto o anterior nao voltou: ignora, senao duplica unidade
+            if (this.ocupado) {
+                return
+            }
+
+            const foco = evento.submitter?.dataset.foco
+            this.ocupado = true
+            this.recado = ''
+            this.$refs.alvo.setAttribute('aria-busy', 'true')
+
+            try {
+                const resposta = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'fetch' },
+                    body: new URLSearchParams(new FormData(form)),
+                })
+
+                const html = await resposta.text()
+
+                if (html.trim() === '') {
+                    this.falha = 'Nao deu para atualizar. Tente de novo.'
+                    return
+                }
+
+                this.falha = ''
+                this.$refs.alvo.innerHTML = html
+                this.atualizarLista()
+
+                // o form de lancar zera so se deu certo: no 422 ela corrige o que digitou
+                if (resposta.ok && form.hasAttribute('data-limpar')) {
+                    form.reset()
+                    this.recado = 'Produto adicionado.'
+                    form.querySelector('select, input:not([type=hidden])')?.focus()
+                } else {
+                    this.devolverFoco(foco)
+                }
+            } catch (erro) {
+                this.falha = 'Sem resposta do servidor. Tente de novo.'
+            } finally {
+                this.ocupado = false
+                this.$refs.alvo.removeAttribute('aria-busy')
+            }
+        },
+
+        /** A linha deste pedido na lista de tras, senao ela fica com o numero velho. */
+        atualizarLista() {
+            const dados = this.$refs.alvo.querySelector('.unidades')?.dataset
+            const linha = dados && document.querySelector(`tr[data-pedido="${dados.pedido}"]`)
+
+            if (!linha) {
+                return
+            }
+
+            const colunas = {
+                unidades: dados.unidades,
+                total: dados.total,
+                'lucro-estimado': dados.lucroEstimado,
+                'lucro-real': dados.lucroReal,
+            }
+
+            for (const [coluna, valor] of Object.entries(colunas)) {
+                const celula = linha.querySelector(`[data-coluna="${coluna}"]`)
+
+                if (celula) {
+                    celula.textContent = valor
+                }
+            }
+        },
+
+        /** O botao clicado foi trocado por um novo; o foco volta pro equivalente. */
+        devolverFoco(foco) {
+            if (!foco) {
+                return
+            }
+
+            const botao = this.$refs.alvo.querySelector(`[data-foco="${CSS.escape(foco)}"]`)
+
+            if (botao && !botao.disabled) {
+                botao.focus()
+            }
         },
     }))
 })

@@ -115,7 +115,11 @@ $saudacao = match (true) {
             </header>
 
             <main class="conteudo">
-                <h1><?= $view->escape('titulo') ?></h1>
+                <!-- titulo_acao: o botao "Novo" da tela, que cada lista.php declara -->
+                <div class="titulo-linha">
+                    <h1><?= $view->escape('titulo') ?></h1>
+                    <?= $view->getParam('titulo_acao') ?>
+                </div>
 
                 <?php if ($view->getParam('flash') !== null): ?>
                     <p class="aviso aviso-<?= $view->escape('flash_tipo') ?>"><?= $view->escape('flash') ?></p>

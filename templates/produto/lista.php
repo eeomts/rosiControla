@@ -22,7 +22,10 @@ foreach ($produtos as $produto) {
 }
 
 ?>
-<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+<?php $view->addParam('titulo_acao', <<<'HTML'
+<button type="button" class="botao botao-primario" x-data @click="$dispatch('abrir-modal')">Novo produto</button>
+HTML); ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)" @abrir-modal.window="abrir()">
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
@@ -30,7 +33,6 @@ foreach ($produtos as $produto) {
 
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, codigo ou genero">
-        <button type="button" class="botao botao-primario" @click="abrir()">Novo produto</button>
     </div>
 
     <?php if (count($produtos) === 0): ?>

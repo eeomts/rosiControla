@@ -23,6 +23,9 @@ foreach ($pedidos as $pedido) {
 }
 
 ?>
+<?php $view->addParam('titulo_acao', <<<'HTML'
+<a class="botao botao-primario" href="/pedido/form">Novo pedido</a>
+HTML); ?>
 <div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
@@ -31,7 +34,6 @@ foreach ($pedidos as $pedido) {
 
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, ciclo ou data">
-        <a class="botao botao-primario" href="/pedido/form">Novo pedido</a>
     </div>
 
     <?php if (count($pedidos) === 0): ?>

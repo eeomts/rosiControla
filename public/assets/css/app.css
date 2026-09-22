@@ -264,7 +264,16 @@ body {
    proibe essa familia em qualquer outro lugar. */
 h1 {
   font: var(--text-page-title);
-  margin: 0 0 var(--space-5);
+  margin: 0;
+}
+
+/* o titulo e o botao "Novo" da tela dividem a linha; o botao vai para o fim */
+.titulo-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 h2 {

@@ -185,6 +185,10 @@ document.addEventListener('alpine:init', () => {
      * O servidor decide se nasce aberto (erro de validacao e /x/form precisam
      * disso); daqui pra frente quem manda e o clique.
      */
+    /**
+     * O botao "Novo" mora no cabecalho da pagina, fora deste x-data, entao ele
+     * pede a abertura por evento em vez de chamar abrir() direto.
+     */
     Alpine.data('modal', (aberto = false) => ({
         aberto: aberto,
 

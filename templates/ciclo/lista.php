@@ -35,7 +35,10 @@ foreach ($ciclos as $ciclo) {
 }
 
 ?>
-<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+<?php $view->addParam('titulo_acao', <<<'HTML'
+<button type="button" class="botao botao-primario" x-data @click="$dispatch('abrir-modal')">Novo ciclo</button>
+HTML); ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)" @abrir-modal.window="abrir()">
 
     <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
@@ -43,7 +46,6 @@ foreach ($ciclos as $ciclo) {
 
         <div class="barra">
             <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, numero, ano ou data">
-            <button type="button" class="botao botao-primario" @click="abrir()">Novo ciclo</button>
         </div>
 
         <?php if (count($ciclos) === 0): ?>

@@ -29,13 +29,15 @@ foreach ($clientes as $cliente) {
 }
 
 ?>
-<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+<?php $view->addParam('titulo_acao', <<<'HTML'
+<button type="button" class="botao botao-primario" x-data @click="$dispatch('abrir-modal')">Nova cliente</button>
+HTML); ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)" @abrir-modal.window="abrir()">
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome ou telefone">
-        <button type="button" class="botao botao-primario" @click="abrir()">Nova cliente</button>
     </div>
 
     <?php if (count($clientes) === 0): ?>

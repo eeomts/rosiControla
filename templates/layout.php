@@ -32,7 +32,13 @@ $meses = [
 ];
 
 $hora = (int) Date::now('H');
-$saudacao = $hora < 12 ? 'Bom dia' : ($hora < 18 ? 'Boa tarde' : 'Boa noite');
+
+$saudacao = match (true) {
+    $hora < 6 => 'Boa madrugada',
+    $hora < 12 => 'Bom dia',
+    $hora < 18 => 'Boa tarde',
+    default => 'Boa noite',
+};
 
 ?>
 <!DOCTYPE html>

@@ -4,9 +4,12 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Moeda;
 use Cubo\Security;
 
 $vendas = $view->getParam('vendas', []);
+$id = $view->getParam('id');
+$modalAberto = (bool) $view->getParam('modal_aberto', false);
 
 
 $emAtributo = JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG | JSON_UNESCAPED_UNICODE;
@@ -24,6 +27,8 @@ foreach ($vendas as $venda) {
 }
 
 ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <div class="barra">
@@ -60,13 +65,21 @@ foreach ($vendas as $venda) {
                             <td><?= Security::escape((string) $venda->data_venda?->format('d/m/Y')) ?></td>
                             <td><?= (int) $venda->itens()->count() ?></td>
                             <td>
-                                R$ <?= Security::escape((string) $venda->mon_total) ?>
+                                R$ <?= Moeda::brl($venda->mon_total) ?>
                                 <?php if ((float) $venda->mon_desconto > 0): ?>
-                                    <span class="dica">-<?= Security::escape((string) $venda->mon_desconto) ?></span>
+                                    <span class="dica">-R$ <?= Moeda::brl($venda->mon_desconto) ?></span>
                                 <?php endif; ?>
                             </td>
-                            <td><?= Security::escape((string) $venda->statusPagamento?->nome) ?></td>
-                            <td><?= Security::escape((string) $venda->statusEntrega?->nome) ?></td>
+                            <td>
+                                <span class="selo <?= (string) $venda->statusPagamento?->nome === 'Pago' ? 'selo-ok' : 'selo-atencao' ?>">
+                                    <?= Security::escape((string) $venda->statusPagamento?->nome) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="selo <?= (string) $venda->statusEntrega?->nome === 'Entregue' ? 'selo-ok' : 'selo-atencao' ?>">
+                                    <?= Security::escape((string) $venda->statusEntrega?->nome) ?>
+                                </span>
+                            </td>
                             <td>
                                 <div class="acoes">
                                     <a class="botao botao-contorno" href="/venda/form/<?= (int) $venda->id ?>">Editar</a>
@@ -91,5 +104,17 @@ foreach ($vendas as $venda) {
         </div>
 
     <?php endif; ?>
+
+</div>
+
+<?php if ($modalAberto): ?>
+<?php
+$modalTitulo = $id === null ? 'Nova venda' : 'Editar venda';
+$modalCorpo = 'venda/form.php';
+$modalTamanho = 'lg';
+
+include __DIR__ . '/../componentes/modal.php';
+?>
+<?php endif; ?>
 
 </div>

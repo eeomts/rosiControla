@@ -22,7 +22,11 @@ final class DefaultView extends View
         $this->addParam('titulo', $this->getParam('titulo', 'Controla'));
         $this->addParam('conteudo', $this->getParam('conteudo', ''));
 
-        // aqui, e nao em cada controlador: o recado tem de aparecer venha de onde vier
+        // lmebrar dessa merda pra alterar quando o login existir
+        $this->addParam('usuario', 'Rosi');
+        $this->addParam('usuario_papel', 'Consultora Natura');
+
+        
         $recado = Flash::daGlobal()->consumir();
 
         $this->addParam('flash', $recado['mensagem'] ?? null);

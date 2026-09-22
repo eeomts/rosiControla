@@ -162,9 +162,6 @@ final class PedidoService
     }
 
     /**
-     * As unidades do pedido agrupadas por dados identicos, para a tela mostrar
-     * "3 x Batom" em vez de tres linhas iguais.
-     *
      * @return list<array<string,mixed>>
      */
     public function unidadesAgrupadas(Pedido $pedido): array
@@ -185,12 +182,12 @@ final class PedidoService
 
             $grupos[$chave] ??= [
                 'produto' => (string) $unidade->produto?->nome,
+                
+                'fk_produto' => (int) $unidade->fk_produto,
                 'custo' => Number::toDecimal((float) $unidade->mon_custo),
                 'venda' => Number::toDecimal((float) $unidade->mon_venda),
                 'validade' => $unidade->data_validade?->format('d/m/Y') ?? '',
                 'ids' => [],
-                // separado porque a vendida pode ser qualquer uma do grupo, nao
-                // as primeiras -- e a tela precisa de UMA que ainda saia
                 'disponiveis' => [],
                 'vendidas' => 0,
             ];

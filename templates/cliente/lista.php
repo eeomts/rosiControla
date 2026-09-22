@@ -9,6 +9,8 @@
 use Cubo\Security;
 
 $clientes = $view->getParam('clientes', []);
+$id = $view->getParam('id');
+$modalAberto = (bool) $view->getParam('modal_aberto', false);
 
 // o JSON vai dentro de um atributo HTML: aspas, & e <> escapados, senao o
 // navegador decodifica entidade antes de o Alpine ler
@@ -26,18 +28,20 @@ foreach ($clientes as $cliente) {
 }
 
 ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome ou telefone">
-        <a class="botao botao-primario" href="/cliente/form">Nova cliente</a>
+        <button type="button" class="botao botao-primario" @click="abrir()">Nova cliente</button>
     </div>
 
     <?php if (count($clientes) === 0): ?>
 
         <div class="cartao vazio">
             <p>Nenhuma cliente cadastrada ainda.</p>
-            <p><a class="botao botao-contorno" href="/cliente/form">Cadastrar a primeira</a></p>
+            <p><button type="button" class="botao botao-contorno" @click="abrir()">Cadastrar a primeira</button></p>
         </div>
 
     <?php else: ?>
@@ -86,5 +90,15 @@ foreach ($clientes as $cliente) {
         </div>
 
     <?php endif; ?>
+
+</div>
+
+<?php
+$modalTitulo = $id === null ? 'Nova cliente' : 'Editar cliente';
+$modalCorpo = 'cliente/form.php';
+$modalTamanho = 'md';
+
+include __DIR__ . '/../componentes/modal.php';
+?>
 
 </div>

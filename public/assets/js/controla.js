@@ -19,6 +19,28 @@ const Moeda = {
     },
 }
 
+/** Tab nao sai da caixa: sem isto o foco cai no que esta atras do scrim. */
+const prenderFoco = (caixa, evento) => {
+    const focaveis = caixa?.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([type=hidden]), select, textarea'
+    )
+
+    if (!focaveis || focaveis.length === 0) {
+        return
+    }
+
+    const primeiro = focaveis[0]
+    const ultimo = focaveis[focaveis.length - 1]
+
+    if (evento.shiftKey && document.activeElement === primeiro) {
+        evento.preventDefault()
+        ultimo.focus()
+    } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault()
+        primeiro.focus()
+    }
+}
+
 document.addEventListener('alpine:init', () => {
     /**
      * Filtro das listas (ciclo, cliente, venda).
@@ -113,6 +135,135 @@ document.addEventListener('alpine:init', () => {
 
         get terminoAntes() {
             return this.inicio !== '' && this.termino !== '' && this.termino < this.inicio
+        },
+    }))
+    /**
+     * Modal.
+     *
+     * O servidor decide se nasce aberto (erro de validacao e /x/form precisam
+     * disso); daqui pra frente quem manda e o clique.
+     */
+    /**
+     * Modal.
+     *
+     * O servidor decide se nasce aberto (erro de validacao e /x/form precisam
+     * disso); daqui pra frente quem manda e o clique.
+     */
+    Alpine.data('modal', (aberto = false) => ({
+        aberto: aberto,
+
+        /** Ligada por um modal empilhado: enquanto ele estiver aberto, este nao fecha. */
+        travado: false,
+
+        init() {
+            if (this.aberto) {
+                this.$nextTick(() => this.focarPrimeiro())
+            }
+        },
+
+        abrir() {
+            this.aberto = true
+            this.$nextTick(() => this.focarPrimeiro())
+        },
+
+        fechar() {
+            if (this.travado) {
+                return
+            }
+
+            this.aberto = false
+        },
+
+        focarPrimeiro() {
+            const alvo = this.$refs.caixa?.querySelector(
+                'input:not([type=hidden]), select, textarea, button'
+            )
+            alvo?.focus()
+        },
+
+        prender(evento) {
+            if (this.travado) {
+                return
+            }
+
+            prenderFoco(this.$refs.caixa, evento)
+        },
+    }))
+
+    /**
+     * Cadastro de apoio, num modal por cima de outro: cria so com o nome e
+     * devolve a opcao para o select da tela de tras, sem recarregar nada.
+     *
+     * @param url    endpoint que responde JSON
+     * @param alvo   id do <select> que recebe a opcao nova
+     */
+    Alpine.data('cadastroRapido', (url, alvo) => ({
+        aberto: false,
+        nome: '',
+        erro: '',
+        salvando: false,
+
+        abrir() {
+            this.nome = ''
+            this.erro = ''
+            this.aberto = true
+
+            // trava o modal de tras: senao um Esc fecharia os dois de uma vez
+            this.$dispatch('modal-travar', true)
+            this.$nextTick(() => this.$refs.campo?.focus())
+        },
+
+        fechar() {
+            this.aberto = false
+            this.$dispatch('modal-travar', false)
+        },
+
+        prender(evento) {
+            prenderFoco(this.$refs.caixa, evento)
+        },
+
+        async salvar() {
+            if (this.salvando) {
+                return
+            }
+
+            this.salvando = true
+            this.erro = ''
+
+            try {
+                const resposta = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ nome: this.nome }),
+                })
+
+                const dados = await resposta.json()
+
+                if (!resposta.ok || !dados.ok) {
+                    this.erro = dados.erro || 'Nao deu para salvar.'
+                    return
+                }
+
+                this.inserir(dados.id, dados.nome)
+                this.fechar()
+            } catch (falha) {
+                this.erro = 'Sem resposta do servidor. Tente de novo.'
+            } finally {
+                this.salvando = false
+            }
+        },
+
+        inserir(id, nome) {
+            const select = document.getElementById(alvo)
+
+            if (!select) {
+                return
+            }
+
+            select.add(new Option(nome, id, true, true))
+
+            // o x-model de quem escuta o select so percebe pelo evento
+            select.dispatchEvent(new Event('change'))
         },
     }))
 })

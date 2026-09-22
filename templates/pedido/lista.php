@@ -4,9 +4,12 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Moeda;
 use Cubo\Security;
 
 $pedidos = $view->getParam('pedidos', []);
+$id = $view->getParam('id');
+$modalAberto = (bool) $view->getParam('modal_aberto', false);
 
 $emAtributo = JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG | JSON_UNESCAPED_UNICODE;
 
@@ -19,6 +22,8 @@ foreach ($pedidos as $pedido) {
 }
 
 ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <div class="barra">
@@ -56,9 +61,9 @@ foreach ($pedidos as $pedido) {
                             <td><?= Security::escape((string) $pedido->ciclo?->nome) ?></td>
                             <td><?= Security::escape((string) $pedido->data_pedido?->format('d/m/Y')) ?></td>
                             <td><?= (int) $pedido->variacoes()->count() ?></td>
-                            <td>R$ <?= Security::escape((string) $pedido->mon_total) ?></td>
-                            <td>R$ <?= Security::escape((string) $pedido->mon_lucro_estimado) ?></td>
-                            <td>R$ <?= Security::escape((string) $pedido->mon_lucro_real) ?></td>
+                            <td>R$ <?= Moeda::brl($pedido->mon_total) ?></td>
+                            <td>R$ <?= Moeda::brl($pedido->mon_lucro_estimado) ?></td>
+                            <td>R$ <?= Moeda::brl($pedido->mon_lucro_real) ?></td>
                             <td>
                                 <div class="acoes">
                                     <a class="botao botao-contorno" href="/pedido/form/<?= (int) $pedido->id ?>">Abrir</a>
@@ -83,5 +88,17 @@ foreach ($pedidos as $pedido) {
         </div>
 
     <?php endif; ?>
+
+</div>
+
+<?php if ($modalAberto): ?>
+<?php
+$modalTitulo = $id === null ? 'Novo pedido' : 'Pedido ' . ($view->getParam('pedido')?->nome ?? '');
+$modalCorpo = 'pedido/form.php';
+$modalTamanho = 'lg';
+
+include __DIR__ . '/../componentes/modal.php';
+?>
+<?php endif; ?>
 
 </div>

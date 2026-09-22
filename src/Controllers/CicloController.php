@@ -29,10 +29,7 @@ final class CicloController extends FeatureController
 
     public function index(): void
     {
-        $this->pagina('Ciclos', 'ciclo/lista.php', [
-            'ciclos' => $this->service->listar(),
-            'hoje' => Date::now('Y-m-d'),
-        ]);
+        $this->tela(false, null, $this->valoresVazios(), []);
     }
 
     public function form(): void
@@ -40,7 +37,7 @@ final class CicloController extends FeatureController
         $id = $this->request->inteiroOuNulo('id');
 
         if ($id === null) {
-            $this->formulario(null, $this->valoresVazios(), []);
+            $this->tela(true, null, $this->valoresVazios(), []);
 
             return;
         }
@@ -52,7 +49,7 @@ final class CicloController extends FeatureController
             Redirecionamento::para(self::URL_LISTA)->enviar();
         }
 
-        $this->formulario($ciclo->id, $this->valoresDe($ciclo), []);
+        $this->tela(true, $ciclo->id, $this->valoresDe($ciclo), []);
     }
 
     public function salvar(): void
@@ -62,8 +59,9 @@ final class CicloController extends FeatureController
         try {
             $ciclo = $this->service->salvar($id, $this->request->corpo());
         } catch (DadosInvalidosException $e) {
-            // sem redirect: a tela de erro precisa do que ela digitou
-            $this->formulario($id, $this->valoresDigitados(), $e->erros());
+            // sem redirect: a tela de erro precisa do que ela digitou, e o
+            // modal tem de voltar aberto
+            $this->tela(true, $id, $this->valoresDigitados(), $e->erros());
 
             return;
         } catch (RuntimeException) {
@@ -88,12 +86,18 @@ final class CicloController extends FeatureController
     }
 
     /**
+     * A tela e sempre a lista; o formulario e um modal dentro dela. Por isso
+     * ate o erro de validacao passa por aqui: a lista precisa vir junto.
+     *
      * @param array<string,string> $valores
      * @param array<string,string> $erros campo => mensagem
      */
-    private function formulario(?int $id, array $valores, array $erros): void
+    private function tela(bool $modalAberto, ?int $id, array $valores, array $erros): void
     {
-        $this->pagina($id === null ? 'Novo ciclo' : 'Editar ciclo', 'ciclo/form.php', [
+        $this->pagina('Ciclos', 'ciclo/lista.php', [
+            'ciclos' => $this->service->listar(),
+            'hoje' => Date::now('Y-m-d'),
+            'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,
             'erros' => $erros,

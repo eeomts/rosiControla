@@ -7,6 +7,8 @@
 use Cubo\Security;
 
 $produtos = $view->getParam('produtos', []);
+$id = $view->getParam('id');
+$modalAberto = (bool) $view->getParam('modal_aberto', false);
 
 $emAtributo = JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG | JSON_UNESCAPED_UNICODE;
 
@@ -19,18 +21,20 @@ foreach ($produtos as $produto) {
 }
 
 ?>
+<div x-data="modal(<?= $modalAberto ? 'true' : 'false' ?>)">
+
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <div class="barra">
         <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, codigo ou genero">
-        <a class="botao botao-primario" href="/produto/form">Novo produto</a>
+        <button type="button" class="botao botao-primario" @click="abrir()">Novo produto</button>
     </div>
 
     <?php if (count($produtos) === 0): ?>
 
         <div class="cartao vazio">
             <p>Nenhum produto cadastrado ainda.</p>
-            <p><a class="botao botao-contorno" href="/produto/form">Cadastrar o primeiro</a></p>
+            <p><button type="button" class="botao botao-contorno" @click="abrir()">Cadastrar o primeiro</button></p>
         </div>
 
     <?php else: ?>
@@ -81,5 +85,15 @@ foreach ($produtos as $produto) {
         </div>
 
     <?php endif; ?>
+
+</div>
+
+<?php
+$modalTitulo = $id === null ? 'Novo produto' : 'Editar produto';
+$modalCorpo = 'produto/form.php';
+$modalTamanho = 'md';
+
+include __DIR__ . '/../componentes/modal.php';
+?>
 
 </div>

@@ -36,11 +36,13 @@ $selecionado = static fn(string $campo, $chave): string
 
 ?>
 <!-- o componente mora em /js/venda-form.js -->
-<form class="cartao form" method="post" action="/venda/salvar" x-data='vendaForm(
+<form method="post" action="/venda/salvar" x-data='vendaForm(
        <?= json_encode($estoque, $emAtributo) ?>,
        <?= json_encode($itens, $emAtributo) ?>,
        <?= json_encode((string) ($valores['mon_desconto'] ?? '0,00'), $emAtributo) ?>
 )'>
+
+       <div class="modal-corpo">
 
        <?php if ($id !== null): ?>
               <input type="hidden" name="id" value="<?= (int) $id ?>">
@@ -57,7 +59,15 @@ $selecionado = static fn(string $campo, $chave): string
                                    </option>
                             <?php endforeach; ?>
                      </select>
-                     <p class="dica">Cliente nova? <a href="/cliente/form">Cadastre aqui</a> e volte.</p>
+                     <?php
+                     $rapidoUrl = '/cliente/rapido';
+                     $rapidoAlvo = 'fk_cliente';
+                     $rapidoTitulo = 'Nova cliente';
+                     $rapidoRotulo = 'Nome da cliente';
+                     $rapidoDica = 'So o nome agora. Telefone e o resto entram depois, na tela de clientes.';
+
+                     include __DIR__ . '/../componentes/cadastro-rapido.php';
+                     ?>
                      <?php if ($erro('fk_cliente') !== ''): ?>
                             <p class="erro"><?= Security::escape($erro('fk_cliente')) ?></p>
                      <?php endif; ?>
@@ -221,9 +231,11 @@ $selecionado = static fn(string $campo, $chave): string
               <p><strong>Total: <span x-text="'R$ ' + moeda(total)">R$ 0,00</span></strong></p>
        </div>
 
-       <div class="barra">
+       </div>
+
+       <div class="modal-rodape">
+              <button type="button" class="botao botao-contorno" @click="fechar()">Cancelar</button>
               <button class="botao botao-primario" type="submit">Salvar venda</button>
-              <a class="botao botao-contorno" href="/venda">Cancelar</a>
        </div>
 
 </form>

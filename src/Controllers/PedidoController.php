@@ -31,9 +31,7 @@ final class PedidoController extends FeatureController
 
     public function index(): void
     {
-        $this->pagina('Pedidos', 'pedido/lista.php', [
-            'pedidos' => $this->service->listar()->load('ciclo'),
-        ]);
+        $this->tela(false, null, $this->valoresVazios(), []);
     }
 
     public function form(): void
@@ -41,7 +39,7 @@ final class PedidoController extends FeatureController
         $id = $this->request->inteiroOuNulo('id');
 
         if ($id === null) {
-            $this->formulario(null, $this->valoresVazios(), []);
+            $this->tela(true, null, $this->valoresVazios(), []);
 
             return;
         }
@@ -53,7 +51,7 @@ final class PedidoController extends FeatureController
             Redirecionamento::para(self::URL_LISTA)->enviar();
         }
 
-        $this->formulario($pedido->id, $this->valoresDe($pedido), [], $pedido);
+        $this->tela(true, $pedido->id, $this->valoresDe($pedido), [], $pedido);
     }
 
     public function salvar(): void
@@ -64,7 +62,7 @@ final class PedidoController extends FeatureController
             $pedido = $this->service->salvar($id, $this->request->corpo());
         } catch (DadosInvalidosException $e) {
             // sem redirect: a tela de erro precisa do que ela digitou
-            $this->formulario($id, $this->valoresDigitados(), $e->erros(), $this->pedidoOuNulo($id));
+            $this->tela(true, $id, $this->valoresDigitados(), $e->erros(), $this->pedidoOuNulo($id));
 
             return;
         } catch (RuntimeException) {
@@ -86,7 +84,7 @@ final class PedidoController extends FeatureController
             $pedido = $this->service->encontrar($id);
             $unidades = $this->service->adicionarProduto($pedido, $this->request->corpo());
         } catch (DadosInvalidosException $e) {
-            $this->formulario($id, $this->valoresDe($this->service->encontrar($id)), $e->erros(), $this->pedidoOuNulo($id));
+            $this->tela(true, $id, $this->valoresDe($this->service->encontrar($id)), $e->erros(), $this->pedidoOuNulo($id));
 
             return;
         } catch (RuntimeException) {
@@ -133,19 +131,30 @@ final class PedidoController extends FeatureController
     }
 
     /**
+     * A tela e sempre a lista; o pedido abre num modal dentro dela.
+     *
      * @param array<string,string> $valores
      * @param array<string,string> $erros campo => mensagem
      */
-    private function formulario(?int $id, array $valores, array $erros, ?Pedido $pedido = null): void
-    {
-        $this->pagina($id === null ? 'Novo pedido' : 'Editar pedido', 'pedido/form.php', [
+    private function tela(
+        bool $modalAberto,
+        ?int $id,
+        array $valores,
+        array $erros,
+        ?Pedido $pedido = null
+    ): void {
+        $this->pagina('Pedidos', 'pedido/lista.php', [
+            'pedidos' => $this->service->listar()->load('ciclo'),
+            'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,
             'erros' => $erros,
             'pedido' => $pedido,
-            'unidades' => $pedido === null ? [] : $this->service->unidadesAgrupadas($pedido),
-            'ciclos' => Ciclo::query()->maisRecente()->pluck('nome', 'id')->all(),
-            'produtos' => Produto::query()->ordenado()->pluck('nome', 'id')->all(),
+            # so quando o modal abre: agrupar unidade e consulta, e a listagem
+            # nao usa nada disso
+            'unidades' => ($modalAberto && $pedido !== null) ? $this->service->unidadesAgrupadas($pedido) : [],
+            'ciclos' => $modalAberto ? Ciclo::query()->maisRecente()->pluck('nome', 'id')->all() : [],
+            'produtos' => $modalAberto ? Produto::query()->ordenado()->pluck('nome', 'id')->all() : [],
         ]);
     }
 

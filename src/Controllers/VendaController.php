@@ -34,9 +34,7 @@ final class VendaController extends FeatureController
 
     public function index(): void
     {
-        $this->pagina('Vendas', 'venda/lista.php', [
-            'vendas' => $this->service->listar()->load(['cliente', 'statusPagamento', 'statusEntrega']),
-        ]);
+        $this->tela(false, null, $this->valoresNovos(), [], [], null);
     }
 
     public function form(): void
@@ -44,7 +42,7 @@ final class VendaController extends FeatureController
         $id = $this->request->inteiroOuNulo('id');
 
         if ($id === null) {
-            $this->formulario(null, $this->valoresNovos(), [], [], null);
+            $this->tela(true, null, $this->valoresNovos(), [], [], null);
 
             return;
         }
@@ -56,7 +54,7 @@ final class VendaController extends FeatureController
             Redirecionamento::para(self::URL_LISTA)->enviar();
         }
 
-        $this->formulario($venda->id, $this->valoresDe($venda), [], $this->itensDe($venda), $venda);
+        $this->tela(true, $venda->id, $this->valoresDe($venda), [], $this->itensDe($venda), $venda);
     }
 
     public function salvar(): void
@@ -68,7 +66,7 @@ final class VendaController extends FeatureController
             $venda = $this->service->salvar($id, $this->request->corpo(), $itens);
         } catch (DadosInvalidosException $e) {
             // sem redirect: a tela de erro precisa dos itens que ela ja montou
-            $this->formulario($id, $this->valoresDigitados(), $e->erros(), $itens, $this->vendaOuNulo($id));
+            $this->tela(true, $id, $this->valoresDigitados(), $e->erros(), $itens, $this->vendaOuNulo($id));
 
             return;
         } catch (RuntimeException) {
@@ -97,14 +95,24 @@ final class VendaController extends FeatureController
      * @param array<string,string> $erros campo => mensagem
      * @param list<array<string,mixed>> $itens
      */
-    private function formulario(?int $id, array $valores, array $erros, array $itens, ?Venda $venda): void
-    {
-        $this->pagina($id === null ? 'Nova venda' : 'Editar venda', 'venda/form.php', [
+    private function tela(
+        bool $modalAberto,
+        ?int $id,
+        array $valores,
+        array $erros,
+        array $itens,
+        ?Venda $venda
+    ): void {
+        $this->pagina('Vendas', 'venda/lista.php', [
+            'vendas' => $this->service->listar()->load(['cliente', 'statusPagamento', 'statusEntrega']),
+            'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,
             'erros' => $erros,
             'itens' => $this->normalizarItens($itens),
-            'estoque' => $this->service->estoqueParaVenda($venda),
+            # a consulta cara da tela; com o modal fechado ela nao serve pra nada,
+            # entao so roda quando ele vai abrir
+            'estoque' => $modalAberto ? $this->service->estoqueParaVenda($venda) : [],
             'clientes' => Cliente::query()->ordenado()->pluck('nome', 'id')->all(),
             'statusPagamento' => StatusPagamento::paraSelect(),
             'statusEntrega' => StatusEntrega::paraSelect(),

@@ -9,6 +9,7 @@ use Controla\Services\ProdutoService;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
 use Controla\Utils\Redirecionamento;
+use Controla\Views\JsonView;
 use RuntimeException;
 
 /**
@@ -30,9 +31,7 @@ final class ProdutoController extends FeatureController
 
     public function index(): void
     {
-        $this->pagina('Produtos', 'produto/lista.php', [
-            'produtos' => $this->service->listar()->load('genero'),
-        ]);
+        $this->tela(false, null, $this->valoresVazios(), []);
     }
 
     public function form(): void
@@ -40,7 +39,7 @@ final class ProdutoController extends FeatureController
         $id = $this->request->inteiroOuNulo('id');
 
         if ($id === null) {
-            $this->formulario(null, $this->valoresVazios(), []);
+            $this->tela(true, null, $this->valoresVazios(), []);
 
             return;
         }
@@ -52,7 +51,7 @@ final class ProdutoController extends FeatureController
             Redirecionamento::para(self::URL_LISTA)->enviar();
         }
 
-        $this->formulario($produto->id, $this->valoresDe($produto), []);
+        $this->tela(true, $produto->id, $this->valoresDe($produto), []);
     }
 
     public function salvar(): void
@@ -63,7 +62,7 @@ final class ProdutoController extends FeatureController
             $produto = $this->service->salvar($id, $this->request->corpo());
         } catch (DadosInvalidosException $e) {
             // sem redirect: a tela de erro precisa do que ela digitou
-            $this->formulario($id, $this->valoresDigitados(), $e->erros());
+            $this->tela(true, $id, $this->valoresDigitados(), $e->erros());
 
             return;
         } catch (RuntimeException) {
@@ -73,6 +72,29 @@ final class ProdutoController extends FeatureController
 
         $this->flash->sucesso("{$produto->nome} salvo.");
         Redirecionamento::para(self::URL_LISTA)->enviar();
+    }
+
+    /**
+     * Cadastro so com o nome, pedido de dentro do modal do pedido. Responde
+     * JSON: a tela de tras nao pode recarregar.
+     */
+    public function rapido(): void
+    {
+        $nome = trim($this->request->texto('nome'));
+
+        try {
+            $produto = $this->service->cadastroRapido($nome);
+        } catch (DadosInvalidosException $e) {
+            $this->setView(new JsonView(['ok' => false, 'erro' => implode(' ', $e->erros())], 422));
+
+            return;
+        }
+
+        $this->setView(new JsonView([
+            'ok' => true,
+            'id' => (int) $produto->id,
+            'nome' => (string) $produto->nome,
+        ]));
     }
 
     public function excluir(): void
@@ -95,9 +117,11 @@ final class ProdutoController extends FeatureController
      * @param array<string,string> $valores
      * @param array<string,string> $erros campo => mensagem
      */
-    private function formulario(?int $id, array $valores, array $erros): void
+    private function tela(bool $modalAberto, ?int $id, array $valores, array $erros): void
     {
-        $this->pagina($id === null ? 'Novo produto' : 'Editar produto', 'produto/form.php', [
+        $this->pagina('Produtos', 'produto/lista.php', [
+            'produtos' => $this->service->listar()->load('genero'),
+            'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,
             'erros' => $erros,

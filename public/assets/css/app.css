@@ -111,20 +111,32 @@ body {
   background: var(--surface-page);
 }
 
-/* ------------------------------------------------------------------- topo */
+/* --------------------------------------------------- esqueleto da aplicacao */
 
-.topo {
+.app {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100vh;
+}
+
+/* ----------------------------------------------------------------- lateral */
+
+.lateral {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-5);
   background: var(--surface-card);
-  border-bottom: var(--traco);
+  border-right: var(--traco);
 }
 
 .marca {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 30px;
   line-height: 1;
   color: var(--ink);
   text-decoration: none;
@@ -132,8 +144,8 @@ body {
 
 .menu {
   display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .menu a {
@@ -150,11 +162,73 @@ body {
   color: var(--ink);
 }
 
+.menu a.ativo {
+  border-color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  background: var(--accent);
+  color: var(--ink-on-accent);
+}
+
+/* ------------------------------------------------------------------- topo */
+
+/* min-width: 0 e o que deixa a tabela larga rolar dentro do grid em vez de
+   esticar a coluna e empurrar a lateral */
+.principal {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-card);
+  border-bottom: var(--traco);
+}
+
+.saudacao {
+  margin: 0;
+  font: var(--text-h3);
+}
+
+.topo .dica {
+  margin: 0;
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.usuario-dados {
+  text-align: right;
+}
+
+.usuario-nome {
+  margin: 0;
+  font: var(--text-label);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: var(--traco);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--ink-on-accent);
+  font: var(--text-h3);
+}
+
 /* ------------------------------------------------------------------ pagina */
 
 .conteudo {
-  max-width: 1280px;
-  margin: 0 auto;
+  max-width: 1440px;
   padding: var(--space-6) var(--space-6) var(--space-8);
 }
 
@@ -534,4 +608,125 @@ h2 {
 .selo-perigo {
   background: var(--danger-soft);
   color: var(--danger-ink);
+}
+
+/* ------------------------------------------------------------------ modal */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: start center;
+  padding: var(--space-7) var(--space-5);
+  overflow-y: auto;
+  background: var(--scrim);
+}
+
+.modal {
+  width: 100%;
+  background: var(--surface-card);
+  border: var(--traco);
+  /* o unico lugar que usa a sombra de 8px, como o tema manda */
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.modal-sm { max-width: 420px; }
+.modal-md { max-width: 560px; }
+.modal-lg { max-width: 960px; }
+
+.modal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: var(--traco);
+  background: var(--accent-soft);
+}
+
+.modal-titulo {
+  margin: 0;
+  font: var(--text-h3);
+}
+
+.modal-fechar {
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  font: var(--text-h3);
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.modal-fechar:hover {
+  color: var(--danger);
+}
+
+.modal-corpo {
+  padding: var(--space-5);
+}
+
+/* o form dentro do modal nao repete cartao nem largura: quem limita e o modal */
+.modal-corpo .form {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.modal-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: var(--traco);
+  background: var(--surface-muted);
+}
+
+/* ------------------------------------------------- modal sobre outro modal */
+
+/* o de cima precisa vencer o scrim do de baixo (z-index 10) */
+.scrim-empilhado {
+  z-index: 20;
+  place-items: center center;
+}
+
+.campo-com-acao {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.campo-com-acao .campo {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* o botao alinha com a base do input, nao com o label */
+.campo-com-acao .botao {
+  margin-bottom: 3px;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------- contador de unidades (+/-) */
+
+.contador {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.contador .botao {
+  min-width: 34px;
+  padding: var(--space-1) var(--space-2);
+  justify-content: center;
+}
+
+.contador-numero {
+  min-width: 24px;
+  text-align: center;
+  font: var(--text-h4);
 }

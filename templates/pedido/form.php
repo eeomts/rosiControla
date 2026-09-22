@@ -4,6 +4,7 @@
  * @var Cubo\View\View $view
  */
 
+use Controla\Utils\Moeda;
 use Cubo\Security;
 
 $id = $view->getParam('id');
@@ -21,7 +22,9 @@ $selecionado = static fn(string $campo, $chave): string
     => (string) ($valores[$campo] ?? '') === (string) $chave ? 'selected' : '';
 
 ?>
-<form class="cartao form" method="post" action="/pedido/salvar">
+<div class="modal-corpo">
+
+<form method="post" action="/pedido/salvar">
 
        <?php if ($id !== null): ?>
               <input type="hidden" name="id" value="<?= (int) $id ?>">
@@ -65,8 +68,7 @@ $selecionado = static fn(string $campo, $chave): string
        </div>
 
        <div class="barra">
-              <button class="botao botao-primario" type="submit">Salvar</button>
-              <a class="botao botao-contorno" href="/pedido">Voltar</a>
+              <button class="botao botao-primario" type="submit">Salvar cabecalho</button>
        </div>
 
 </form>
@@ -81,7 +83,7 @@ $selecionado = static fn(string $campo, $chave): string
 
        <h2>Lancar produto</h2>
 
-       <form class="cartao form" method="post" action="/pedido/adicionar">
+       <form method="post" action="/pedido/adicionar">
               <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
 
               <div class="campo <?= $erro('fk_produto') !== '' ? 'campo-invalido' : '' ?>">
@@ -92,7 +94,15 @@ $selecionado = static fn(string $campo, $chave): string
                                    <option value="<?= (int) $chave ?>"><?= Security::escape((string) $nome) ?></option>
                             <?php endforeach; ?>
                      </select>
-                     <p class="dica">Nao achou? <a href="/produto/form">Cadastre o produto</a> e volte.</p>
+                     <?php
+                     $rapidoUrl = '/produto/rapido';
+                     $rapidoAlvo = 'fk_produto';
+                     $rapidoTitulo = 'Novo produto';
+                     $rapidoRotulo = 'Nome do produto';
+                     $rapidoDica = 'So o nome agora. Codigo e genero entram depois, na tela de produtos.';
+
+                     include __DIR__ . '/../componentes/cadastro-rapido.php';
+                     ?>
                      <?php if ($erro('fk_produto') !== ''): ?>
                             <p class="erro"><?= Security::escape($erro('fk_produto')) ?></p>
                      <?php endif; ?>
@@ -170,20 +180,36 @@ $selecionado = static fn(string $campo, $chave): string
                                    <?php foreach ($unidades as $grupo): ?>
                                           <tr>
                                                  <td><?= Security::escape((string) $grupo['produto']) ?></td>
-                                                 <td><?= count($grupo['ids']) ?></td>
-                                                 <td><?= Security::escape((string) $grupo['validade']) ?: '-' ?></td>
-                                                 <td>R$ <?= Security::escape((string) $grupo['custo']) ?></td>
-                                                 <td>R$ <?= Security::escape((string) $grupo['venda']) ?></td>
-                                                 <td><?= (int) $grupo['vendidas'] ?></td>
                                                  <td>
-                                                        <?php if ($grupo['disponiveis'] !== []): ?>
-                                                               <!-- tira UMA unidade do grupo, a primeira que ainda nao saiu -->
+                                                        <div class="contador">
+                                                               <!-- tira UMA unidade: a primeira do grupo que ainda nao saiu -->
                                                                <form method="post" action="/pedido/remover">
                                                                       <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
-                                                                      <input type="hidden" name="unidade" value="<?= (int) $grupo['disponiveis'][0] ?>">
-                                                                      <button class="botao botao-fantasma">Tirar uma</button>
+                                                                      <input type="hidden" name="unidade" value="<?= (int) ($grupo['disponiveis'][0] ?? 0) ?>">
+                                                                      <button class="botao botao-contorno" title="Tirar uma unidade"
+                                                                             <?= $grupo['disponiveis'] === [] ? 'disabled' : '' ?>>&minus;</button>
                                                                </form>
-                                                        <?php else: ?>
+
+                                                               <span class="contador-numero"><?= count($grupo['ids']) ?></span>
+
+                                                               <!-- repete a MESMA unidade: mesmo produto, validade e precos -->
+                                                               <form method="post" action="/pedido/adicionar">
+                                                                      <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
+                                                                      <input type="hidden" name="fk_produto" value="<?= (int) $grupo['fk_produto'] ?>">
+                                                                      <input type="hidden" name="quantidade" value="1">
+                                                                      <input type="hidden" name="data_validade" value="<?= Security::escape((string) $grupo['validade']) ?>">
+                                                                      <input type="hidden" name="mon_custo" value="<?= Security::escape((string) $grupo['custo']) ?>">
+                                                                      <input type="hidden" name="mon_venda" value="<?= Security::escape((string) $grupo['venda']) ?>">
+                                                                      <button class="botao botao-contorno" title="Adicionar mais uma">+</button>
+                                                               </form>
+                                                        </div>
+                                                 </td>
+                                                 <td><?= Security::escape((string) $grupo['validade']) ?: '-' ?></td>
+                                                 <td>R$ <?= Moeda::brl($grupo['custo']) ?></td>
+                                                 <td>R$ <?= Moeda::brl($grupo['venda']) ?></td>
+                                                 <td><?= (int) $grupo['vendidas'] ?></td>
+                                                 <td>
+                                                        <?php if ($grupo['disponiveis'] === []): ?>
                                                                <span class="dica">todas vendidas</span>
                                                         <?php endif; ?>
                                                  </td>
@@ -194,11 +220,17 @@ $selecionado = static fn(string $campo, $chave): string
               </div>
 
               <div class="cartao total">
-                     <p>Custo do pedido: <strong>R$ <?= Security::escape((string) $pedido->mon_total) ?></strong></p>
-                     <p>Lucro estimado: <strong>R$ <?= Security::escape((string) $pedido->mon_lucro_estimado) ?></strong></p>
-                     <p>Lucro real ate agora: <strong>R$ <?= Security::escape((string) $pedido->mon_lucro_real) ?></strong></p>
+                     <p>Custo do pedido: <strong>R$ <?= Moeda::brl($pedido->mon_total) ?></strong></p>
+                     <p>Lucro estimado: <strong>R$ <?= Moeda::brl($pedido->mon_lucro_estimado) ?></strong></p>
+                     <p>Lucro real ate agora: <strong>R$ <?= Moeda::brl($pedido->mon_lucro_real) ?></strong></p>
               </div>
 
        <?php endif; ?>
 
 <?php endif; ?>
+
+</div>
+
+<div class="modal-rodape">
+       <button type="button" class="botao botao-contorno" @click="fechar()">Fechar</button>
+</div>

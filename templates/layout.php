@@ -1,3 +1,40 @@
+<?php
+
+/**
+ * @var Cubo\View\View $view
+ */
+
+use Cubo\Security;
+use Cubo\Tools\Date;
+
+$rota = '/' . trim((string) $view->getParam('rota', '/'), '/');
+$usuario = (string) $view->getParam('usuario', '');
+
+// o inicio so casa exato; o resto casa o comeco do caminho, para /ciclo/form
+// manter "Ciclos" aceso
+$itens = [
+    '/' => 'Inicio',
+    '/ciclo' => 'Ciclos',
+    '/pedido' => 'Pedidos',
+    '/produto' => 'Produtos',
+    '/venda' => 'Vendas',
+    '/cliente' => 'Clientes',
+    '/conta' => 'Contas',
+];
+
+$ativo = static function (string $item) use ($rota): bool {
+    return $item === '/' ? $rota === '/' : str_starts_with($rota, $item);
+};
+
+$meses = [
+    1 => 'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+];
+
+$hora = (int) Date::now('H');
+$saudacao = $hora < 12 ? 'Bom dia' : ($hora < 18 ? 'Boa tarde' : 'Boa noite');
+
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -13,34 +50,60 @@
 
     <script defer src="/assets/js/controla.js"></script>
     <script defer src="/assets/js/venda-form.js"></script>
-    
+
     <script defer src="/assets/js/lib/alpine-3.16.2.min.js"></script>
 </head>
 
 <body>
 
-    <header class="topo">
-        <a class="marca" href="/"><?= $view->escape('sistema') ?></a>
-        <nav class="menu">
-            <a href="/">Inicio</a>
-            <a href="/ciclo">Ciclos</a>
-            <a href="/pedido">Pedidos</a>
-            <a href="/produto">Produtos</a>
-            <a href="/venda">Vendas</a>
-            <a href="/cliente">Clientes</a>
-            <a href="/conta">Contas</a>
-        </nav>
-    </header>
+    <div class="app">
 
-    <main class="conteudo">
-        <h1><?= $view->escape('titulo') ?></h1>
+        <aside class="lateral">
+            <a class="marca" href="/"><?= $view->escape('sistema') ?></a>
 
-        <?php if ($view->getParam('flash') !== null): ?>
-            <p class="aviso aviso-<?= $view->escape('flash_tipo') ?>"><?= $view->escape('flash') ?></p>
-        <?php endif; ?>
+            <nav class="menu">
+                <?php foreach ($itens as $caminho => $nome): ?>
+                    <a href="<?= $caminho ?>" class="<?= $ativo($caminho) ? 'ativo' : '' ?>">
+                        <?= Security::escape($nome) ?>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+        </aside>
 
-        <?= $view->getParam('conteudo') ?>
-    </main>
+        <div class="principal">
+
+            <!-- PROVISORIO: nome e papel sao fixos ate o login existir -->
+            <header class="topo">
+                <div>
+                    <p class="saudacao"><?= $saudacao ?>, <?= $view->escape('usuario') ?></p>
+                    <p class="dica">
+                        <?= (int) Date::now('d') ?> de <?= $meses[(int) Date::now('m')] ?>
+                        de <?= (int) Date::now('Y') ?>
+                    </p>
+                </div>
+
+                <div class="usuario">
+                    <div class="usuario-dados">
+                        <p class="usuario-nome"><?= $view->escape('usuario') ?></p>
+                        <p class="dica"><?= $view->escape('usuario_papel') ?></p>
+                    </div>
+                    <span class="avatar"><?= Security::escape(mb_strtoupper(mb_substr($usuario, 0, 1))) ?></span>
+                </div>
+            </header>
+
+            <main class="conteudo">
+                <h1><?= $view->escape('titulo') ?></h1>
+
+                <?php if ($view->getParam('flash') !== null): ?>
+                    <p class="aviso aviso-<?= $view->escape('flash_tipo') ?>"><?= $view->escape('flash') ?></p>
+                <?php endif; ?>
+
+                <?= $view->getParam('conteudo') ?>
+            </main>
+
+        </div>
+
+    </div>
 
 </body>
 

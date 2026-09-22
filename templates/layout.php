@@ -22,6 +22,14 @@ $itens = [
     '/conta' => 'Contas',
 ];
 
+// o Caddy manda o navegador guardar css/js por 30 dias; com a data do arquivo
+// na URL, mudou o arquivo, mudou a URL, e o navegador busca de novo
+$versao = static function (string $caminho): string {
+    $arquivo = __DIR__ . '/../public' . $caminho;
+
+    return $caminho . '?v=' . (is_file($arquivo) ? filemtime($arquivo) : '0');
+};
+
 $ativo = static function (string $item) use ($rota): bool {
     return $item === '/' ? $rota === '/' : str_starts_with($rota, $item);
 };
@@ -52,10 +60,10 @@ $saudacao = match (true) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&display=swap">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="<?= $versao('/assets/css/app.css') ?>">
 
-    <script defer src="/assets/js/controla.js"></script>
-    <script defer src="/assets/js/venda-form.js"></script>
+    <script defer src="<?= $versao('/assets/js/controla.js') ?>"></script>
+    <script defer src="<?= $versao('/assets/js/venda-form.js') ?>"></script>
 
     <script defer src="/assets/js/lib/alpine-3.16.2.min.js"></script>
 </head>

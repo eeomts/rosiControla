@@ -134,7 +134,7 @@ $selecionado = static fn(string $campo, $chave): string
               <div class="dupla">
                      <div class="campo <?= $erro('mon_custo') !== '' ? 'campo-invalido' : '' ?>">
                             <label for="mon_custo">Custo (o que voce pagou)</label>
-                            <input id="mon_custo" name="mon_custo" type="text" inputmode="decimal" required>
+                            <input id="mon_custo" name="mon_custo" type="text" inputmode="numeric" placeholder="0,00" x-moeda required>
                             <?php if ($erro('mon_custo') !== ''): ?>
                                    <p class="erro"><?= Security::escape($erro('mon_custo')) ?></p>
                             <?php endif; ?>
@@ -142,7 +142,7 @@ $selecionado = static fn(string $campo, $chave): string
 
                      <div class="campo <?= $erro('mon_venda') !== '' ? 'campo-invalido' : '' ?>">
                             <label for="mon_venda">Venda (o que vai cobrar)</label>
-                            <input id="mon_venda" name="mon_venda" type="text" inputmode="decimal" required>
+                            <input id="mon_venda" name="mon_venda" type="text" inputmode="numeric" placeholder="0,00" x-moeda required>
                             <?php if ($erro('mon_venda') !== ''): ?>
                                    <p class="erro"><?= Security::escape($erro('mon_venda')) ?></p>
                             <?php endif; ?>

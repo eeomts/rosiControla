@@ -188,12 +188,12 @@ $selecionado = static fn(string $campo, $chave): string
                                                         :value="item.fk_variacao_produto">
                                           </td>
                                           <td>
-                                                 <input class="curto" type="text" inputmode="decimal"
-                                                        :name="'itens[' + i + '][mon_venda]'" x-model="item.mon_venda">
+                                                 <input class="curto" type="text" inputmode="numeric"
+                                                        :name="'itens[' + i + '][mon_venda]'" x-model="item.mon_venda" placeholder="0,00" x-moeda>
                                           </td>
                                           <td>
-                                                 <input class="curto" type="text" inputmode="decimal"
-                                                        :name="'itens[' + i + '][mon_desconto]'" x-model="item.mon_desconto">
+                                                 <input class="curto" type="text" inputmode="numeric"
+                                                        :name="'itens[' + i + '][mon_desconto]'" x-model="item.mon_desconto" placeholder="0,00" x-moeda>
                                           </td>
                                           <td x-text="'R$ ' + moeda(liquido(item))"></td>
                                           <td>
@@ -214,8 +214,8 @@ $selecionado = static fn(string $campo, $chave): string
 
        <div class="campo <?= $erro('mon_desconto') !== '' ? 'campo-invalido' : '' ?>">
               <label for="mon_desconto">Desconto na venda inteira</label>
-              <input id="mon_desconto" name="mon_desconto" type="text" inputmode="decimal"
-                     value="<?= $valor('mon_desconto') ?>" x-model="desconto">
+              <input id="mon_desconto" name="mon_desconto" type="text" inputmode="numeric"
+                     value="<?= $valor('mon_desconto') ?>" x-model="desconto" placeholder="0,00" x-moeda>
               <p class="dica">E dividido entre os itens na proporcao do valor de cada um.</p>
               <?php if ($erro('mon_desconto') !== ''): ?>
                      <p class="erro"><?= Security::escape($erro('mon_desconto')) ?></p>

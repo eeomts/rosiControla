@@ -45,7 +45,8 @@ document.addEventListener('alpine:init', () => {
 
             this.itens.push({
                 fk_variacao_produto: String(livre),
-                mon_venda: grupo.preco.replace('.', ','),
+                // mon_venda: grupo.preco.replace('.', ','),
+                mon_venda: Moeda.texto(parseFloat(grupo.preco)),
                 mon_desconto: '0,00',
             })
         },

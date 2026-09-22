@@ -8,8 +8,20 @@ const Moeda = {
         return parseFloat(limpo) || 0
     },
 
+    // texto(numero) {
+    //     return numero.toFixed(2).replace('.', ',')
+    // },
+
+    /** 1234.5 -> "1.234,50", igual ao Moeda::brl() do PHP. */
     texto(numero) {
-        return numero.toFixed(2).replace('.', ',')
+        return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+
+    /** Caixa registradora: so os digitos contam e os dois ultimos sao centavos. */
+    mascarar(texto) {
+        const digitos = String(texto).replace(/\D/g, '').replace(/^0+/, '')
+
+        return digitos === '' ? '' : this.texto(parseInt(digitos, 10) / 100)
     },
 }
 
@@ -36,6 +48,33 @@ const prenderFoco = (caixa, evento) => {
 }
 
 document.addEventListener('alpine:init', () => {
+    /**
+     * Mascara de dinheiro: <input x-moeda>.
+     *
+     * Se o input tiver x-model, o listener dele pode rodar antes deste e guardar
+     * o valor cru; por isso, quando a mascara muda o texto, ela redispara o
+     * 'input'. Na segunda volta o texto ja esta formatado e nada muda: sem loop.
+     */
+    Alpine.directive('moeda', (el) => {
+        const aplicar = (formatado) => {
+            if (el.value === formatado) {
+                return
+            }
+
+            el.value = formatado
+            el.dispatchEvent(new Event('input', { bubbles: true }))
+        }
+
+        el.addEventListener('input', () => aplicar(Moeda.mascarar(el.value)))
+
+        // o que veio do servidor ("123.00") ou do x-model: depois que o x-model preencheu
+        queueMicrotask(() => {
+            if (el.value !== '') {
+                aplicar(Moeda.texto(Moeda.valor(el.value)))
+            }
+        })
+    })
+
     /**
      * Filtro das listas (ciclo, cliente, venda).
      *

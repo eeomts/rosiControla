@@ -56,7 +56,9 @@ $saudacao = match (true) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $view->escape('titulo') ?> - <?= $view->escape('sistema') ?></title>
+    <!-- o .ico fica para quem nao aceita svg (Safari); quem aceita usa o R -->
     <link rel="icon" href="/favicon.ico" sizes="16x16">
+    <link rel="icon" type="image/svg+xml" href="<?= $versao('/assets/img/favicon.svg') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&display=swap">
@@ -73,7 +75,12 @@ $saudacao = match (true) {
     <div class="app">
 
         <aside class="lateral">
-            <a class="marca" href="/"><?= $view->escape('sistema') ?></a>
+            <!-- <a class="marca" href="/"><?= $view->escape('sistema') ?></a> -->
+            <!-- inline e nao <img>: so assim o fill="currentColor" pega a cor do CSS -->
+            <a class="marca" href="/">
+                <?= file_get_contents(__DIR__ . '/../public/assets/img/logo.svg') ?>
+                <span class="marca-nome"><?= $view->escape('sistema') ?></span>
+            </a>
 
             <nav class="menu">
                 <?php foreach ($itens as $caminho => $nome): ?>

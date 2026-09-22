@@ -134,13 +134,41 @@ body {
   border-right: var(--traco);
 }
 
-.marca {
+/* .marca {
   font-family: var(--font-display);
   font-size: 30px;
   line-height: 1;
   color: var(--ink);
   text-decoration: none;
+} */
+
+/* o logo e quadrado: muda o tamanho so aqui */
+.marca {
+  --marca-tamanho: 70px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: center; /* a .lateral e flex em coluna */
+  color: var(--accent);
+  text-decoration: none;
 }
+
+.marca svg {
+  display: block;
+  width: var(--marca-tamanho);
+  height: var(--marca-tamanho);
+}
+
+.marca-nome {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.marca:hover { color: var(--accent-hover); }
 
 .menu {
   display: flex;

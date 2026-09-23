@@ -803,3 +803,75 @@ h2 {
   gap: var(--space-2);
   margin-left: auto;
 }
+
+/* a busca instantanea quando ela entra na propria linha dos filtros */
+.filtros .cresce {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filtros .busca {
+  width: 100%;
+}
+
+/* campo e botao com a MESMA altura na barra de filtros: o botao e a referencia */
+.filtros {
+  --filtro-altura: 42px;
+}
+
+.filtros input,
+.filtros select,
+.filtros .botao {
+  height: var(--filtro-altura);
+}
+
+/* a altura ja manda; o padding vertical so brigaria com ela */
+.filtros input,
+.filtros select {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* larguras dos campos de faixa: sem isto a data e o dinheiro esticam e a barra
+   quebra antes da hora. A busca cede primeiro, porque ela e a que estica. */
+.filtros input[type="date"] {
+  width: 140px;
+}
+
+.filtros input[x-moeda] {
+  width: 96px;
+}
+
+.filtros select {
+  max-width: 160px;
+}
+
+.filtros .cresce {
+  min-width: 150px;
+}
+
+/* botao so de icone: quadrado, do mesmo lado da altura dos campos */
+.botao-icone {
+  width: var(--filtro-altura, 42px);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* botao so de icone: quadrado, do lado da altura dos campos do filtro */
+.botao-icone {
+  width: var(--filtro-altura, 42px);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* o icone e fonte de um peso so: font-weight nao engrossa, o contorno sim.
+   E o que casa com o traco grosso do resto do sistema. */
+.botao-icone .bi {
+  -webkit-text-stroke: 1.6px currentColor;
+}

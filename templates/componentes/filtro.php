@@ -93,8 +93,14 @@ $marcado = static function (Campo $campo, int|string $chave) use ($valores): str
         </div>
     <?php endforeach; ?>
 
+    <!-- filtro_extra: o que a tela quiser na mesma linha, como a busca instantanea -->
+    <?= $view->getParam('filtro_extra') ?>
+
     <div class="filtro-acoes">
-        <button class="botao botao-primario" type="submit">Filtrar</button>
+        <!-- so a lupa: o title e o aria-label dizem o que ele faz para quem nao ve o icone -->
+        <button class="botao botao-primario botao-icone" type="submit" title="Filtrar" aria-label="Filtrar">
+            <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
 
         <?php if ($valores !== null && !$valores->vazio()): ?>
             <!-- limpar e um link para a mesma tela sem query string -->

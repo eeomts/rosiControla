@@ -64,6 +64,8 @@ $saudacao = match (true) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&display=swap">
+    <!-- vendorizado pelo npm e copiado para assets/icons; nao vem de CDN -->
+    <link rel="stylesheet" href="<?= $versao('/assets/icons/bootstrap-icons/bootstrap-icons.min.css') ?>">
     <link rel="stylesheet" href="<?= $versao('/assets/css/app.css') ?>">
 
     <script defer src="<?= $versao('/assets/js/controla.js') ?>"></script>

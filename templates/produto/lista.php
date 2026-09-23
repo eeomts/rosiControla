@@ -29,11 +29,20 @@ HTML); ?>
 
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
-    <?php include __DIR__ . '/../componentes/filtro.php'; ?>
-
-    <div class="barra">
-        <input class="busca cresce" type="search" x-model="busca" placeholder="Filtrar por nome, codigo ou genero">
+    <?php
+    // a busca instantanea entra na mesma linha dos filtros; o x-model vale
+    // porque o form do filtro fica dentro deste x-data
+    $view->addParam('filtro_extra', <<<'HTML'
+    <div class="campo cresce">
+        <label for="busca-lista">Busca rapida</label>
+        <!-- Enter aqui recarregaria a pagina (o form e GET) e perderia o que ela digitou -->
+        <input id="busca-lista" class="busca" type="search" x-model="busca"
+            @keydown.enter.prevent placeholder="Nome, codigo ou genero">
     </div>
+    HTML);
+
+    include __DIR__ . '/../componentes/filtro.php';
+    ?>
 
     <?php if (count($produtos) === 0): ?>
 

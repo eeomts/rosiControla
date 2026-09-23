@@ -17,3 +17,4 @@ TODO/
 .dockerignore
 .gitignore
 compose.yml
+node_modules/

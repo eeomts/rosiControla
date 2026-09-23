@@ -61,7 +61,7 @@ HTML); ?>
                         <th>Pedido</th>
                         <th>Ciclo</th>
                         <th>Data</th>
-                        <th>Unidades</th>
+                        <th>Un.</th>
                         <th>Custo</th>
                         <th>Lucro estimado</th>
                         <th>Lucro real</th>

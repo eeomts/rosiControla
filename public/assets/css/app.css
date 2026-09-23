@@ -687,6 +687,7 @@ h2 {
   font: var(--text-h3);
 }
 
+/* o X virou o mesmo botao quadrado do filtrar (.botao-icone)
 .modal-fechar {
   padding: 0 var(--space-2);
   border: 0;
@@ -699,7 +700,7 @@ h2 {
 
 .modal-fechar:hover {
   color: var(--danger);
-}
+} */
 
 .modal-corpo {
   padding: var(--space-5);
@@ -850,19 +851,11 @@ h2 {
   min-width: 150px;
 }
 
-/* botao so de icone: quadrado, do mesmo lado da altura dos campos */
-.botao-icone {
-  width: var(--filtro-altura, 42px);
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-  font-size: 18px;
-  line-height: 1;
-}
-
 /* botao so de icone: quadrado, do lado da altura dos campos do filtro */
 .botao-icone {
+  /* a altura tambem aqui: fora da barra de filtros ninguem a define */
   width: var(--filtro-altura, 42px);
+  height: var(--filtro-altura, 42px);
   padding: 0;
   display: inline-grid;
   place-items: center;

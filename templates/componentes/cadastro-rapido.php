@@ -27,7 +27,10 @@ use Cubo\Security;
 
             <div class="modal-topo">
                 <p class="modal-titulo"><?= Security::escape((string) $rapidoTitulo) ?></p>
-                <button type="button" class="modal-fechar" @click="fechar()" aria-label="Fechar">&times;</button>
+                <button type="button" class="botao botao-primario botao-icone" @click="fechar()"
+                    title="Fechar" aria-label="Fechar">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
             </div>
 
             <div class="modal-corpo">

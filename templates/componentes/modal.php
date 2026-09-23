@@ -29,7 +29,11 @@ $modalTamanho = $modalTamanho ?? 'md';
 
         <div class="modal-topo">
             <p class="modal-titulo"><?= Security::escape((string) $modalTitulo) ?></p>
-            <button type="button" class="modal-fechar" @click="fechar()" aria-label="Fechar">&times;</button>
+            <!-- mesmo botao do filtrar: quadrado, so com o icone -->
+            <button type="button" class="botao botao-primario botao-icone" @click="fechar()"
+                title="Fechar" aria-label="Fechar">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
         </div>
 
         <?php include __DIR__ . '/../' . $modalCorpo; ?>

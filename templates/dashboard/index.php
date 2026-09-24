@@ -26,7 +26,7 @@ $falta = $lucroEstimado - $lucroReal;
 
 <?php if ($ciclo === null): ?>
 
-    <div class="cartao vazio">
+    <div class="cartao vazio" style="margin-bottom: 20px;">
         <p>Nenhum ciclo cadastrado ainda. E por ele que tudo comeca.</p>
         <p><a class="botao botao-primario" href="/ciclo/form">Cadastrar o primeiro ciclo</a></p>
     </div>

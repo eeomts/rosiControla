@@ -46,6 +46,12 @@ final class Csrf
         return $token !== '' && is_string($enviado) && hash_equals($token, $enviado);
     }
 
+    /** Descarta o token atual; o proximo token() nasce outro. */
+    public function girar(): void
+    {
+        $this->sessao->remove(self::CHAVE);
+    }
+
     public function campo(): string
     {
         return '<input type="hidden" name="' . self::CAMPO . '" value="' . Security::escape($this->token()) . '">';

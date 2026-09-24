@@ -3,6 +3,7 @@
 namespace Controla\Views;
 
 use Controla\Utils\Flash;
+use Controla\Utils\Sessao;
 use Cubo\View\View;
 
 /**
@@ -11,9 +12,14 @@ use Cubo\View\View;
  */
 final class DefaultView extends View
 {
-    public function __construct()
+    public const LAYOUT_SISTEMA = 'layout.php';
+
+    /** Login, cadastro e confirmacao: sem menu lateral e sem cabecalho. */
+    public const LAYOUT_ACESSO = 'acesso.php';
+
+    public function __construct(string $layout = self::LAYOUT_SISTEMA)
     {
-        $this->setTemplate('layout.php');
+        $this->setTemplate($layout);
     }
 
     protected function _setDefaultParams(): void
@@ -23,10 +29,12 @@ final class DefaultView extends View
         $this->addParam('conteudo', $this->getParam('conteudo', ''));
 
         // lmebrar dessa merda pra alterar quando o login existir
-        $this->addParam('usuario', 'Rosi');
+        // $this->addParam('usuario', 'Rosi');
+        $this->addParam('usuario', Sessao::daGlobal()->nome());
+        // PROVISORIO: a tabela usuario nao tem papel
         $this->addParam('usuario_papel', 'Consultora Natura');
 
-        
+
         $recado = Flash::daGlobal()->consumir();
 
         $this->addParam('flash', $recado['mensagem'] ?? null);

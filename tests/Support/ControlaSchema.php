@@ -139,6 +139,22 @@ final class ControlaSchema
             $table->integer('deleted')->default(0);
         });
 
+        $schema->dropIfExists('usuario');
+        $schema->create('usuario', function (Blueprint $table): void {
+            $table->increments('id');
+            $table->string('nome', 120);
+            $table->string('email', 160);
+            $table->boolean('email_confirmado')->default(0);
+            $table->string('codigo', 255)->nullable();
+            $table->dateTime('data_codigo_expira')->nullable();
+            $table->integer('num_tentativas')->default(0);
+            $table->string('senha', 255);
+            $table->boolean('ativo')->default(1);
+            $table->timestamp('created')->nullable();
+            $table->timestamp('updated')->nullable();
+            $table->integer('deleted')->default(0);
+        });
+
         self::semear();
     }
 

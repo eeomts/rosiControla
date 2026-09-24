@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use Controla\Controllers\AcessoController;
 use Controla\Controllers\CicloController;
 use Controla\Controllers\ClienteController;
 use Controla\Controllers\DashboardController;
@@ -16,6 +17,16 @@ use Controla\Controllers\VendaController;
 use Cubo\Routing\RouteCollection;
 
 $rotas = new RouteCollection();
+
+//publics
+$rotas->get('/login', AcessoController::class, 'login')->name('login');
+$rotas->post('/login', AcessoController::class, 'entrar')->name('login.entrar');
+$rotas->get('/cadastro', AcessoController::class, 'cadastro')->name('cadastro');
+$rotas->post('/cadastro', AcessoController::class, 'cadastrar')->name('cadastro.salvar');
+$rotas->get('/confirmacao', AcessoController::class, 'confirmacao')->name('confirmacao');
+$rotas->post('/confirmacao', AcessoController::class, 'confirmar')->name('confirmacao.confirmar');
+$rotas->post('/confirmacao/reenviar', AcessoController::class, 'reenviar')->name('confirmacao.reenviar');
+$rotas->post('/sair', AcessoController::class, 'sair')->name('sair');
 
 $rotas->get('/', DashboardController::class, 'index')->name('home');
 

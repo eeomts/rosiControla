@@ -86,3 +86,16 @@ charset = UTF-8
 
 ;ErrorHandler escreve aqui.
 log = storage/logs/erro.log
+
+[email]
+; SMTP que manda o codigo de confirmacao do login. No Gmail: senha de APP
+; (Conta Google -> Seguranca -> Senhas de app), nunca a senha da conta.
+host = smtp.gmail.com
+porta = 587
+; tls na 587, ssl na 465
+seguranca = tls
+usuario = seu-email@gmail.com
+; codificada: php bin/encode "a-senha-de-app" (sem os espacos que o Google mostra)
+senha =
+remetente = seu-email@gmail.com
+nome_remetente = Controla

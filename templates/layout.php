@@ -97,7 +97,7 @@ $saudacao = match (true) {
 
         <div class="principal">
 
-            <!-- PROVISORIO: nome e papel sao fixos ate o login existir -->
+            <!-- o nome vem da sessao; o papel segue fixo, a tabela usuario nao tem -->
             <header class="topo">
                 <div>
                     <p class="saudacao"><?= $saudacao ?>, <?= $view->escape('usuario') ?></p>
@@ -113,6 +113,14 @@ $saudacao = match (true) {
                         <p class="dica"><?= $view->escape('usuario_papel') ?></p>
                     </div>
                     <span class="avatar"><?= Security::escape(mb_strtoupper(mb_substr($usuario, 0, 1))) ?></span>
+
+                    <!-- POST e nao link: um <img src="/sair"> em outro site nao pode deslogar ninguem -->
+                    <form method="post" action="/sair">
+                        <?= Csrf::daGlobal()->campo() ?>
+                        <button class="botao botao-contorno botao-icone" type="submit" title="Sair" aria-label="Sair">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </form>
                 </div>
             </header>
 
@@ -137,3 +145,5 @@ $saudacao = match (true) {
 </body>
 
 </html>
+
+

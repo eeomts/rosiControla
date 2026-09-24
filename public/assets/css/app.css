@@ -868,3 +868,76 @@ h2 {
 .botao-icone .bi {
   -webkit-text-stroke: 1.6px currentColor;
 }
+
+/* ------------------------------------------------------------------ acesso */
+
+/* login, cadastro e confirmacao: um cartao no meio da tela, sem a lateral */
+.acesso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  min-height: 100vh;
+  padding: var(--space-6);
+}
+
+.acesso-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--accent);
+}
+
+.acesso-marca svg {
+  display: block;
+  width: 70px;
+  height: 70px;
+}
+
+.acesso-cartao {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-6);
+}
+
+.acesso-cartao h1 {
+  margin: 0 0 var(--space-5);
+  font: var(--text-page-title);
+  font-size: 26px;
+  line-height: 32px;
+}
+
+.acesso-intro {
+  margin: 0 0 var(--space-5);
+}
+
+.acesso-enviar {
+  width: 100%;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+}
+
+.acesso-codigo {
+  font: var(--text-h2) !important;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
+.acesso-rodape {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-5);
+}
+
+.acesso-rodape .dica { margin: 0; }
+
+/* .acesso-rodape .botao { padding: 0; } */
+.acesso-rodape .botao-fantasma { padding: 0; }
+
+/* o Sair do cabecalho: um form de um botao so, porque sair e POST */
+.usuario form { margin: 0; }

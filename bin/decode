@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Inverso do bin/encode (Cubo\Tools\Str::cuboDecode).
+ *
+ *   php bin/decode database.docker   -> user e pass dessa secao do config.ini
+ *   php bin/decode "valor"           -> um valor solto
+ */
+
+use Cubo\Tools\Str;
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$alvo = $argv[1] ?? null;
+
+if ($alvo === null) {
+    fwrite(STDERR, "uso: php bin/decode database.docker   ou   php bin/decode \"valor\"\n");
+    exit(1);
+}
+
+$ini = parse_ini_file(dirname(__DIR__) . '/config/config.ini', true) ?: [];
+
+if (!isset($ini[$alvo])) {
+    echo Str::cuboDecode($alvo), "\n";
+    exit(0);
+}
+
+foreach (['user', 'pass'] as $chave) {
+    echo $chave, ': ', Str::cuboDecode((string) ($ini[$alvo][$chave] ?? '')), "\n";
+}

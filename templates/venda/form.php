@@ -38,11 +38,12 @@ $selecionado = static fn(string $campo, $chave): string
 ?>
 <!-- o componente mora em /js/venda-form.js -->
 <form method="post" action="/venda/salvar" x-data='vendaForm(
-       <?= json_encode($estoque, $emAtributo) ?>
-       <?= Csrf::daGlobal()->campo() ?>,
+       <?= json_encode($estoque, $emAtributo) ?>,
        <?= json_encode($itens, $emAtributo) ?>,
        <?= json_encode((string) ($valores['mon_desconto'] ?? '0,00'), $emAtributo) ?>
 )'>
+
+       <?= Csrf::daGlobal()->campo() ?>
 
        <div class="modal-corpo">
 

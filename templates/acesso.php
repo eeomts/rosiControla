@@ -34,11 +34,6 @@ $versao = static function (string $caminho): string {
 
     <main class="acesso">
 
-        <p class="acesso-marca">
-            <?= file_get_contents(__DIR__ . '/../public/assets/img/logo.svg') ?>
-            <span class="marca-nome"><?= $view->escape('sistema') ?></span>
-        </p>
-
         <div class="cartao acesso-cartao">
             <h1><?= $view->escape('titulo') ?></h1>
 

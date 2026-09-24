@@ -813,6 +813,9 @@ h2 {
 
 .filtros .busca {
   width: 100%;
+  /* o min-width: 260px do .busca solto venceria o width e vazaria por cima da
+     lupa quando a coluna encolhe (vendas tem 6 filtros) */
+  min-width: 0;
 }
 
 /* campo e botao com a MESMA altura na barra de filtros: o botao e a referencia */

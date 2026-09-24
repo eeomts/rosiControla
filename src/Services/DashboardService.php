@@ -42,8 +42,6 @@ final class DashboardService
             'ciclo' => $ciclo,
             'vigente' => $vigente,
             'dias' => $this->diasAte($hoje, $ciclo?->data_termino),
-            # sem isto um ciclo que ainda NAO comecou seria anunciado como
-            # terminado: os dois casos caem no mesmo "nao vigente"
             'comeca' => $this->diasAte($hoje, $ciclo?->data_inicio),
         ];
     }
@@ -86,7 +84,6 @@ final class DashboardService
         ];
     }
 
-    /** O sum() do banco devolve float: '19.9' em vez de '19.90'. */
     private function dinheiro(mixed $valor): string
     {
         return (string) Number::toDecimal(is_numeric($valor) ? $valor : 0);

@@ -22,15 +22,6 @@ use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
 
 /**
- * A venda e as unidades que sairam nela.
- *
- * Duas regras dao o tom deste service:
- *
- * 1. Vender CONSOME estoque -- cada unidade vira `vendido = 1` e volta para a
- *    prateleira se a venda for editada ou excluida.
- * 2. O desconto da venda inteira e RATEADO na hora de salvar e gravado item a
- *    item, nunca recalculado depois. Assim o lucro real do pedido e uma soma.
- *
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
@@ -44,8 +35,6 @@ final class VendaService
     }
 
     /**
-     * Cria (id null) ou atualiza a venda inteira: cabecalho e itens de uma vez.
-     *
      * @param array<string,mixed> $dados fk_cliente, data_venda, os dois status e mon_desconto
      * @param list<array<string,mixed>> $itens Cada um com fk_variacao_produto e,
      *                                         opcionalmente, mon_venda e mon_desconto
@@ -243,9 +232,6 @@ final class VendaService
 
             $distribuido += $parte;
 
-            // coluna separada: o mon_desconto continua sendo so o que ela deu
-            // NAQUELE item, entao reabrir a venda e salvar de novo cai no mesmo
-            // rateio em vez de descontar duas vezes
             $linha->mon_desconto_rateio = Number::toDecimal($parte);
             $linha->save();
         }

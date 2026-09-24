@@ -6,7 +6,6 @@ use RuntimeException;
 use Throwable;
 
 /**
- * O email nao saiu: servidor fora, senha errada ou o [email] incompleto.
  * @package Controla
  * @author Mateus - github.com/eeomts
  */

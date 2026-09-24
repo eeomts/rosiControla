@@ -6,7 +6,6 @@ use Controla\Models\Usuario;
 use Cubo\Session;
 
 /**
- * Quem esta logada, e quem ainda esta confirmando o email.
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
@@ -69,13 +68,8 @@ final class Sessao
         return $id > 0 ? $id : null;
     }
 
-    /**
-     * Id de sessao novo e token de CSRF novo: o que alguem capturou antes do
-     * login nao vale depois dele.
-     */
     private function trocarIdentidade(): void
     {
-        // sem sessao ativa (CLI, teste) nao ha id para trocar
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_regenerate_id(true);
         }

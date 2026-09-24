@@ -7,7 +7,6 @@ use PHPMailer\PHPMailer\Exception as PHPMailerException;
 use PHPMailer\PHPMailer\PHPMailer;
 
 /**
- * Entrega pelo SMTP da secao [email], com o PHPMailer.
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
@@ -48,7 +47,7 @@ final class SmtpRemetente implements Remetente
             $email->Username = $config->usuario;
             $email->Password = $config->senha;
             $email->CharSet = PHPMailer::CHARSET_UTF8;
-            // o padrao e 300s: com o servidor fora, a tela ficaria 5 minutos girando
+            
             $email->Timeout = self::TIMEOUT;
 
             $email->setFrom($config->remetente, $config->nomeRemetente);

@@ -46,7 +46,6 @@ final class NaoEncontradoMiddleware implements Middleware
         return Response::html((string) ob_get_clean(), $status);
     }
 
-    /** Primeiro segmento do caminho: e o que a tela chama de "tela pedida". */
     private function telaPedida(Request $request): string
     {
         $caminho = trim($request->path(), '/');

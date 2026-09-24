@@ -33,7 +33,6 @@ final class AutenticacaoMiddleware implements Middleware
             return $next($request);
         }
 
-        # o fetch nao segue redirect para uma pagina de login: devolve o recado cru
         if ($request->header('X-Requested-With') === 'fetch') {
             return Response::json(['ok' => false, 'erro' => 'Voce saiu do sistema. Entre de novo.'], 401);
         }

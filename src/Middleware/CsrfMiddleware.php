@@ -16,7 +16,6 @@ use Cubo\Routing\Route;
  */
 final class CsrfMiddleware implements Middleware
 {
-    /** Verbos que so leem; o resto passa pelo token. */
     private const SEGUROS = ['GET', 'HEAD', 'OPTIONS'];
 
     public function handle(Request $request, \Closure $next): Response
@@ -32,7 +31,6 @@ final class CsrfMiddleware implements Middleware
         return $this->recusar($request);
     }
 
-    /** Formulario manda no corpo; o fetch, no cabecalho. */
     private function enviado(Request $request): ?string
     {
         $doCorpo = $request->post(Csrf::CAMPO);
@@ -42,16 +40,11 @@ final class CsrfMiddleware implements Middleware
             : $request->header(Csrf::CABECALHO);
     }
 
-    /**
-     * 419 e o status que o ecossistema PHP usa para "a sessao expirou"; nao esta
-     * na RFC, mas e o que Laravel e afins devolvem, e o 403 diria "voce nao pode"
-     * quando a verdade e "tente de novo".
-     */
+    
     private function recusar(Request $request): Response
     {
         $recado = 'A pagina ficou aberta tempo demais. Recarregue e tente de novo.';
 
-        # o fetch nao sabe ler uma pagina inteira: devolve o recado cru
         if ($request->header('X-Requested-With') === 'fetch') {
             return Response::json(['ok' => false, 'erro' => $recado], 419);
         }

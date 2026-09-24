@@ -87,16 +87,11 @@ final class CicloController extends FeatureController
     }
 
     /**
-     * A tela e sempre a lista; o formulario e um modal dentro dela. Por isso
-     * ate o erro de validacao passa por aqui: a lista precisa vir junto.
-     *
      * @param array<string,string> $valores
      * @param array<string,string> $erros campo => mensagem
      */
     private function tela(bool $modalAberto, ?int $id, array $valores, array $erros): void
     {
-        # os filtros viajam por GET, entao valem em qualquer tela da feature: o
-        # POST que volta com erro de validacao nao perde o que ela filtrou
         $definicao = $this->service->filtros();
         $filtros = Valores::deRequest($this->request->query(), $definicao);
 

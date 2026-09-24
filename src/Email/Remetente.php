@@ -3,7 +3,6 @@
 namespace Controla\Email;
 
 /**
- * Quem entrega um email. O service so conhece isto; o SMTP e um detalhe.
  * @package Controla
  * @author Mateus - github.com/eeomts
  */

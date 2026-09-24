@@ -101,7 +101,6 @@ final class AcessoController extends FeatureController
         try {
             $usuario = $this->service->cadastrar($this->request->corpo());
         } catch (DadosInvalidosException $e) {
-            // a senha nao volta para o form: ela digita de novo
             $this->telaCadastro([
                 'nome' => $this->request->texto('nome'),
                 'email' => $this->request->texto('email'),
@@ -109,7 +108,6 @@ final class AcessoController extends FeatureController
 
             return;
         } catch (RuntimeException) {
-            // outra aba cadastrou primeiro
             Redirecionamento::para(AutenticacaoMiddleware::URL_LOGIN)->enviar();
         }
 
@@ -153,7 +151,6 @@ final class AcessoController extends FeatureController
 
     # ---------------------------------------------------------------- APOIO
 
-    /** Quem chega em /confirmacao sem ter cadastrado ou tentado entrar volta para o login. */
     private function pendente(): Usuario
     {
         try {
@@ -163,7 +160,6 @@ final class AcessoController extends FeatureController
         }
     }
 
-    /** O recado vai no flash: quem chama sempre redireciona para a confirmacao. */
     private function mandarCodigo(Usuario $usuario): void
     {
         try {

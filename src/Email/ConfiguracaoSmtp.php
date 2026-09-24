@@ -24,7 +24,6 @@ final class ConfiguracaoSmtp
         public readonly string $nomeRemetente,
     ) {}
 
-    /** O Cubo\Config so guarda [cubo], [app] e [database.*]; o resto do ini ele descarta. */
     public static function daApp(): self
     {
         $arquivo = Config::getInstance()->getAppRoot() . '/config/config.ini';

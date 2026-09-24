@@ -44,9 +44,6 @@ final class ProdutoService
     }
 
     /**
-     * Cadastro rapido feito de dentro de outra tela (pedido, amostra, venda),
-     * onde ela so tem o nome do produto em maos.
-     *
      * @throws DadosInvalidosException
      */
     public function cadastroRapido(string $nome): Produto
@@ -94,9 +91,6 @@ final class ProdutoService
     }
 
     /**
-     * Excluir a base derrubaria o nome das unidades que vieram dela, entao um
-     * produto com variacao cadastrada nao sai.
-     *
      * @throws RuntimeException Se o id nao aponta para um produto.
      * @throws RegistroEmUsoException Se o produto ja tem unidades.
      */
@@ -134,7 +128,6 @@ final class ProdutoService
             }
         }
 
-        // select vazio chega como '' e nao pode virar 0
         if (array_key_exists('fk_genero', $dados)) {
             $dados['fk_genero'] = ($dados['fk_genero'] === '' || $dados['fk_genero'] === null)
                 ? null
@@ -172,7 +165,6 @@ final class ProdutoService
         }
     }
 
-    /** O scope de exclusao logica ja tira os apagados da conferencia. */
     private function codigoRepetido(Produto $produto): bool
     {
         return Produto::query()

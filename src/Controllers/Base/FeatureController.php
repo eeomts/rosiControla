@@ -24,14 +24,12 @@ abstract class FeatureController extends Controller
         $this->request = new Entrada($this->_request, $this->_route);
         $this->flash = Flash::daGlobal();
 
-        # o menu lateral marca o item da tela aberta, e quem sabe o caminho e a
-        # requisicao -- nao cada controlador
         $this->_view->addParam('rota', $this->_request->path());
 
         $this->iniciar();
     }
 
-    /** Onde a feature cria o seu service. */
+
     protected function iniciar(): void
     {
     }

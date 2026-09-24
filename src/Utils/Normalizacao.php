@@ -5,18 +5,12 @@ namespace Controla\Utils;
 use Cubo\Validation\Sanitizer;
 
 /**
- * Traduz o que o formulario mandou para o que o banco espera.
- *
- * Quem faz o trabalho e o Cubo\Validation\Sanitizer (#019 do framework); esta
- * classe existe so pela mensagem. O Sanitizer responde 'mon_custo nao e um
- * valor monetario valido', com nome de coluna -- e quem le a tela e a usuaria.
- *
  * @package Controla
  * @author Mateus - github.com/eeomts
  */
 final class Normalizacao
 {
-    /** Mensagem por filtro, para o erro nao sair com nome de coluna. */
+
     private const MENSAGENS = [
         'date' => 'Data invalida.',
         'money' => 'Valor invalido.',
@@ -38,9 +32,6 @@ final class Normalizacao
     }
 
     /**
-     * Quando o erro nao interessa -- o campo invalido volta como null e quem
-     * chama ja tem um padrao para ele.
-     *
      * @param array<string,mixed> $dados
      * @param array<string,string> $filtros
      * @return array<string,mixed>
@@ -66,7 +57,6 @@ final class Normalizacao
         return $traduzidos;
     }
 
-    /** O filtro pode vir encadeado ('trim|money'); vale o primeiro que tem texto. */
     private static function mensagem(string $filtro): string
     {
         foreach (explode('|', $filtro) as $nome) {

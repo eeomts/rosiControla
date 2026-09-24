@@ -30,7 +30,6 @@ final class AutenticacaoService
 
     public function __construct(private readonly Remetente $remetente) {}
 
-    /** O sistema e de uma pessoa so: depois da primeira conta, o cadastro fecha. */
     public function cadastroAberto(): bool
     {
         return Usuario::query()->count() === 0;
@@ -62,7 +61,6 @@ final class AutenticacaoService
     }
 
     /**
-     * Gera um codigo novo (o anterior deixa de valer) e manda por email.
      * @throws EmailNaoEnviadoException
      */
     public function enviarCodigo(Usuario $usuario): void
@@ -122,7 +120,6 @@ final class AutenticacaoService
 
         $usuario = Usuario::query()->porEmail($email)->first();
 
-        // compara mesmo sem conta: a resposta demora igual e nao entrega quais emails existem
         $confere = password_verify($senha, $usuario?->senha ?? self::HASH_FALSO);
 
         if ($usuario === null || !$confere) {
@@ -173,7 +170,6 @@ final class AutenticacaoService
     }
 
     /**
-     * A senha nao passa pelo normalizar(): espaco no comeco dela e parte da senha.
      * @throws DadosInvalidosException
      */
     private function validarCadastro(Usuario $usuario, string $senha, string $confirmacao): void

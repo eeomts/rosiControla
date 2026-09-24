@@ -43,13 +43,14 @@ final class ProdutoService
         return $produto;
     }
 
-    /**
-     * @throws DadosInvalidosException
-     */
-    public function cadastroRapido(string $nome): Produto
-    {
-        return $this->salvar(null, ['nome' => $nome]);
-    }
+    // trocado pelo cadastro normal empilhado no pedido (/produto/criar -> salvar())
+    // /**
+    //  * @throws DadosInvalidosException
+    //  */
+    // public function cadastroRapido(string $nome): Produto
+    // {
+    //     return $this->salvar(null, ['nome' => $nome]);
+    // }
 
     /**
      * @param string|null $termo Filtra por nome ou codigo; vazio traz todos.

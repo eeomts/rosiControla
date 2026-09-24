@@ -8,16 +8,10 @@ const Moeda = {
         return parseFloat(limpo) || 0
     },
 
-    // texto(numero) {
-    //     return numero.toFixed(2).replace('.', ',')
-    // },
-
-    /** 1234.5 -> "1.234,50", igual ao Moeda::brl() do PHP. */
     texto(numero) {
         return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     },
 
-    /** Caixa registradora: so os digitos contam e os dois ultimos sao centavos. */
     mascarar(texto) {
         const digitos = String(texto).replace(/\D/g, '').replace(/^0+/, '')
 
@@ -25,10 +19,14 @@ const Moeda = {
     },
 }
 
-/** O token que o CsrfMiddleware exige; o layout deixa numa <meta>. */
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || ''
 
-/** Tab nao sai da caixa: sem isto o foco cai no que esta atras do scrim. */
+const semAcento = (texto) => String(texto ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+
 const prenderFoco = (caixa, evento) => {
     const focaveis = caixa?.querySelectorAll(
         'a[href], button:not([disabled]), input:not([type=hidden]), select, textarea'
@@ -51,13 +49,7 @@ const prenderFoco = (caixa, evento) => {
 }
 
 document.addEventListener('alpine:init', () => {
-    /**
-     * Mascara de dinheiro: <input x-moeda>.
-     *
-     * Se o input tiver x-model, o listener dele pode rodar antes deste e guardar
-     * o valor cru; por isso, quando a mascara muda o texto, ela redispara o
-     * 'input'. Na segunda volta o texto ja esta formatado e nada muda: sem loop.
-     */
+
     Alpine.directive('moeda', (el) => {
         const aplicar = (formatado) => {
             if (el.value === formatado) {
@@ -70,7 +62,6 @@ document.addEventListener('alpine:init', () => {
 
         el.addEventListener('input', () => aplicar(Moeda.mascarar(el.value)))
 
-        // o que veio do servidor ("123.00") ou do x-model: depois que o x-model preencheu
         queueMicrotask(() => {
             if (el.value !== '') {
                 aplicar(Moeda.texto(Moeda.valor(el.value)))
@@ -78,12 +69,6 @@ document.addEventListener('alpine:init', () => {
         })
     })
 
-    /**
-     * Filtro das listas (ciclo, cliente, venda).
-     *
-     * Cada <tr> carrega o proprio termo em data-busca; o array `termos` existe
-     * so para saber se ALGUMA linha casou, e assim decidir o aviso de vazio.
-     */
     Alpine.data('listaFiltravel', (termos = []) => ({
         busca: '',
         termos: termos,
@@ -101,12 +86,6 @@ document.addEventListener('alpine:init', () => {
         },
     }))
 
-    /**
-     * Exclusao em dois cliques.
-     *
-     * Sem JS o form posta de primeira, que e o comportamento certo para quem
-     * nao tem script; com Alpine o primeiro clique so arma a confirmacao.
-     */
     Alpine.data('confirmacao', () => ({
         confirmando: false,
 
@@ -122,9 +101,6 @@ document.addEventListener('alpine:init', () => {
         },
     }))
 
-    /**
-     * Telefone com mascara na tela e so digito no banco.
-     */
     Alpine.data('telefone', (inicial = '') => ({
         telefone: inicial,
 
@@ -173,26 +149,10 @@ document.addEventListener('alpine:init', () => {
             return this.inicio !== '' && this.termino !== '' && this.termino < this.inicio
         },
     }))
-    /**
-     * Modal.
-     *
-     * O servidor decide se nasce aberto (erro de validacao e /x/form precisam
-     * disso); daqui pra frente quem manda e o clique.
-     */
-    /**
-     * Modal.
-     *
-     * O servidor decide se nasce aberto (erro de validacao e /x/form precisam
-     * disso); daqui pra frente quem manda e o clique.
-     */
-    /**
-     * O botao "Novo" mora no cabecalho da pagina, fora deste x-data, entao ele
-     * pede a abertura por evento em vez de chamar abrir() direto.
-     */
+
     Alpine.data('modal', (aberto = false) => ({
         aberto: aberto,
 
-        /** Ligada por um modal empilhado: enquanto ele estiver aberto, este nao fecha. */
         travado: false,
 
         init() {
@@ -230,13 +190,6 @@ document.addEventListener('alpine:init', () => {
         },
     }))
 
-    /**
-     * Cadastro de apoio, num modal por cima de outro: cria so com o nome e
-     * devolve a opcao para o select da tela de tras, sem recarregar nada.
-     *
-     * @param url    endpoint que responde JSON
-     * @param alvo   id do <select> que recebe a opcao nova
-     */
     Alpine.data('cadastroRapido', (url, alvo) => ({
         aberto: false,
         nome: '',
@@ -248,7 +201,6 @@ document.addEventListener('alpine:init', () => {
             this.erro = ''
             this.aberto = true
 
-            // trava o modal de tras: senao um Esc fecharia os dois de uma vez
             this.$dispatch('modal-travar', true)
             this.$nextTick(() => this.$refs.campo?.focus())
         },
@@ -275,7 +227,6 @@ document.addEventListener('alpine:init', () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
-                        // sem ele, um 419 viria como pagina HTML e o json() abaixo quebraria
                         'X-Requested-With': 'fetch',
                         'X-CSRF-Token': csrf(),
                     },
@@ -307,15 +258,181 @@ document.addEventListener('alpine:init', () => {
 
             select.add(new Option(nome, id, true, true))
 
-            // o x-model de quem escuta o select so percebe pelo evento
             select.dispatchEvent(new Event('change'))
         },
     }))
 
-    /**
-     * O lancar e o +/- do pedido sem recarregar: o servidor devolve o "No pedido" pronto
-     * (pedido/unidades.php) e ele so troca de lugar. Nada de moeda em JS.
-     */
+    Alpine.data('cadastroEmpilhado', (url, evento, vazio) => ({
+        aberto: false,
+        dados: { ...vazio },
+        erros: {},
+        erro: '',
+        salvando: false,
+
+        abrir() {
+            this.dados = { ...vazio }
+            this.erros = {}
+            this.erro = ''
+            this.aberto = true
+
+            this.$dispatch('modal-travar', true)
+            this.$nextTick(() => this.$refs.primeiro?.focus())
+        },
+
+        fechar() {
+            this.aberto = false
+            this.$dispatch('modal-travar', false)
+        },
+
+        prender(evento) {
+            prenderFoco(this.$refs.caixa, evento)
+        },
+
+        async salvar() {
+            if (this.salvando || String(this.dados.nome ?? '').trim() === '') {
+                return
+            }
+
+            this.salvando = true
+            this.erros = {}
+            this.erro = ''
+
+            try {
+                const resposta = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'fetch',
+                        'X-CSRF-Token': csrf(),
+                    },
+                    body: new URLSearchParams(this.dados),
+                })
+
+                const dados = await resposta.json()
+
+                if (!resposta.ok || !dados.ok) {
+                    this.erros = dados.erros || {}
+                    
+                    this.erro = dados.erro || (Object.keys(this.erros).length ? '' : 'Nao deu para salvar.')
+                    return
+                }
+
+                window.dispatchEvent(new CustomEvent(evento, { detail: dados.item }))
+
+                this.fechar()
+            } catch (falha) {
+                this.erro = 'Sem resposta do servidor. Tente de novo.'
+            } finally {
+                this.salvando = false
+            }
+        },
+    }))
+
+    Alpine.data('escolha', (config) => ({
+        config,
+        itens: config.itens,
+        aberto: false,
+        busca: '',
+        marcado: null,
+        escolhido: config.valor ?? null,
+
+        init() {
+            if (config.evento) {
+                window.addEventListener(config.evento, (e) => this.acrescentar(e.detail))
+            }
+
+            this.$el.closest('form')?.addEventListener('reset', () => {
+                this.escolhido = null
+            })
+        },
+
+        get visiveis() {
+            const termo = semAcento(this.busca)
+
+            if (termo === '') {
+                return this.itens
+            }
+
+            return this.itens.filter((item) =>
+                config.colunas.some((coluna) => semAcento(item[coluna.chave]).includes(termo))
+            )
+        },
+
+        get legenda() {
+            const item = this.item(this.escolhido)
+
+            return item ? config.legenda.map((coluna) => item[coluna]).filter(Boolean).join(' - ') : ''
+        },
+
+        item(id) {
+            return id === null ? null : this.itens.find((item) => String(item.id) === String(id)) ?? null
+        },
+
+        ehMarcado(item) {
+            return this.marcado !== null && String(this.marcado) === String(item.id)
+        },
+
+        classe(item) {
+            if (this.marcado === null) {
+                return ''
+            }
+
+            return this.ehMarcado(item) ? 'escolha-marcada' : 'escolha-ofuscada'
+        },
+
+        abrir() {
+            this.marcado = this.escolhido
+            this.busca = ''
+            this.aberto = true
+
+this.$dispatch('modal-travar', true)
+            this.$nextTick(() => this.$refs.busca?.focus())
+        },
+
+        fechar() {
+            this.aberto = false
+            this.$dispatch('modal-travar', false)
+        },
+
+        marcar(id) {
+            this.marcado = id
+        },
+
+        confirmar() {
+            if (this.marcado === null) {
+                return
+            }
+
+            this.escolhido = this.marcado
+            this.fechar()
+        },
+
+        escolherJa(id) {
+            this.marcado = id
+            this.confirmar()
+        },
+
+        acrescentar(item) {
+            if (!item || item.id === undefined) {
+                return
+            }
+
+            if (this.item(item.id) === null) {
+                const ordem = config.legenda[0]
+
+                this.itens = [...this.itens, item].sort((a, b) =>
+                    String(a[ordem] ?? '').localeCompare(String(b[ordem] ?? ''), 'pt-BR')
+                )
+            }
+
+            this.escolhido = item.id
+        },
+
+        prender(evento) {
+            prenderFoco(this.$refs.caixa, evento)
+        },
+    }))
+
     Alpine.data('unidadesPedido', () => ({
         ocupado: false,
         falha: '',
@@ -330,7 +447,6 @@ document.addEventListener('alpine:init', () => {
 
             evento.preventDefault()
 
-            // clique repetido enquanto o anterior nao voltou: ignora, senao duplica unidade
             if (this.ocupado) {
                 return
             }
@@ -349,7 +465,6 @@ document.addEventListener('alpine:init', () => {
 
                 const html = await resposta.text()
 
-                // o middleware do Csrf responde JSON, nao o pedaco de tela
                 if (resposta.headers.get('content-type')?.includes('json')) {
                     this.falha = JSON.parse(html).erro || 'Nao deu para atualizar.'
                     return
@@ -364,11 +479,10 @@ document.addEventListener('alpine:init', () => {
                 this.$refs.alvo.innerHTML = html
                 this.atualizarLista()
 
-                // o form de lancar zera so se deu certo: no 422 ela corrige o que digitou
                 if (resposta.ok && form.hasAttribute('data-limpar')) {
                     form.reset()
                     this.recado = 'Produto adicionado.'
-                    form.querySelector('select, input:not([type=hidden])')?.focus()
+                    form.querySelector('[data-primeiro], select, input:not([type=hidden])')?.focus()
                 } else {
                     this.devolverFoco(foco)
                 }
@@ -380,7 +494,6 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        /** A linha deste pedido na lista de tras, senao ela fica com o numero velho. */
         atualizarLista() {
             const dados = this.$refs.alvo.querySelector('.unidades')?.dataset
             const linha = dados && document.querySelector(`tr[data-pedido="${dados.pedido}"]`)
@@ -405,7 +518,6 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        /** O botao clicado foi trocado por um novo; o foco volta pro equivalente. */
         devolverFoco(foco) {
             if (!foco) {
                 return

@@ -5,6 +5,7 @@ namespace Controla\Controllers;
 use Controla\Controllers\Base\FeatureController;
 use Controla\Filtro\Valores;
 use Controla\Models\Ciclo;
+use Controla\Models\Genero;
 use Controla\Models\Pedido;
 use Controla\Models\Produto;
 use Controla\Services\PedidoService;
@@ -193,7 +194,13 @@ final class PedidoController extends FeatureController
             # nao usa nada disso
             'unidades' => ($modalAberto && $pedido !== null) ? $this->service->unidadesAgrupadas($pedido) : [],
             'ciclos' => $modalAberto ? Ciclo::query()->maisRecente()->pluck('nome', 'id')->all() : [],
-            'produtos' => $modalAberto ? Produto::query()->ordenado()->pluck('nome', 'id')->all() : [],
+            // 'produtos' => $modalAberto ? Produto::query()->ordenado()->pluck('nome', 'id')->all() : [],
+            // a grade de escolha mostra nome, codigo e sexo, nao so o nome
+            'produtos' => $modalAberto
+                ? Produto::query()->with('genero')->ordenado()->get()->map->paraEscolha()->all()
+                : [],
+            // o "+ Novo" do lancamento abre o cadastro completo de produto
+            'generos' => $modalAberto ? Genero::paraSelect() : [],
         ]);
     }
 

@@ -93,22 +93,48 @@ $selecionado = static fn(string $campo, $chave): string
               <input type="hidden" name="id" value="<?= (int) $pedido->id ?>">
 
               <div class="campo <?= $erro('fk_produto') !== '' ? 'campo-invalido' : '' ?>">
-                     <label for="fk_produto">Produto</label>
+                     <label for="escolha-fk_produto">Produto</label>
+                     <?php /* trocado pela escolha em modal, abaixo
                      <select id="fk_produto" name="fk_produto" required>
                             <option value="">Escolha o produto</option>
                             <?php foreach ($produtos as $chave => $nome): ?>
                                    <option value="<?= (int) $chave ?>"><?= Security::escape((string) $nome) ?></option>
                             <?php endforeach; ?>
                      </select>
-                     <?php
-                     $rapidoUrl = '/produto/rapido';
-                     $rapidoAlvo = 'fk_produto';
-                     $rapidoTitulo = 'Novo produto';
-                     $rapidoRotulo = 'Nome do produto';
-                     $rapidoDica = 'So o nome agora. Codigo e genero entram depois, na tela de produtos.';
+                     */ ?>
 
-                     include __DIR__ . '/../componentes/cadastro-rapido.php';
+                     <!-- escolher e cadastrar lado a lado -->
+                     <div class="escolha-linha">
+                     <?php
+                     $escolhaCampo = 'fk_produto';
+                     $escolhaTitulo = 'Escolher produto';
+                     $escolhaVazio = 'Nenhum produto escolhido';
+                     $escolhaItens = $produtos;
+                     $escolhaColunas = ['nome' => 'Nome', 'codigo' => 'Codigo', 'genero' => 'Sexo'];
+                     $escolhaLegenda = ['nome', 'genero'];
+                     $escolhaBusca = 'Buscar por nome ou codigo';
+                     // o "+ Novo" avisa por aqui, e o produto criado ja fica escolhido
+                     $escolhaEvento = 'produto-criado';
+
+                     include __DIR__ . '/../componentes/escolha.php';
                      ?>
+
+                     <?php
+                     // $rapidoUrl = '/produto/rapido';
+                     // $rapidoAlvo = 'fk_produto';
+                     // $rapidoTitulo = 'Novo produto';
+                     // $rapidoRotulo = 'Nome do produto';
+                     // $rapidoDica = 'So o nome agora. Codigo e genero entram depois, na tela de produtos.';
+                     //
+                     // include __DIR__ . '/../componentes/cadastro-rapido.php';
+
+                     // o cadastro completo, o mesmo da tela de produtos
+                     $generos = (array) $view->getParam('generos', []);
+
+                     include __DIR__ . '/../produto/empilhado.php';
+                     ?>
+                     </div>
+
                      <?php if ($erro('fk_produto') !== ''): ?>
                             <p class="erro"><?= Security::escape($erro('fk_produto')) ?></p>
                      <?php endif; ?>

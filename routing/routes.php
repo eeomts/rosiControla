@@ -47,7 +47,8 @@ $rotas->get('/produto', ProdutoController::class, 'index')->name('produto.lista'
 $rotas->get('/produto/form', ProdutoController::class, 'form')->name('produto.novo');
 $rotas->get('/produto/form/{id}', ProdutoController::class, 'form')->name('produto.editar');
 $rotas->post('/produto/salvar', ProdutoController::class, 'salvar')->name('produto.salvar');
-$rotas->post('/produto/rapido', ProdutoController::class, 'rapido')->name('produto.rapido');
+// $rotas->post('/produto/rapido', ProdutoController::class, 'rapido')->name('produto.rapido');
+$rotas->post('/produto/criar', ProdutoController::class, 'criar')->name('produto.criar');
 $rotas->post('/produto/excluir', ProdutoController::class, 'excluir')->name('produto.excluir');
 
 $rotas->get('/pedido', PedidoController::class, 'index')->name('pedido.lista');

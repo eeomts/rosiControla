@@ -66,13 +66,14 @@ final class ProdutoServiceTest extends TestCase
         $this->assertCount(2, Produto::getRecords());
     }
 
-    public function testCadastroRapidoSoPrecisaDoNome(): void
-    {
-        $produto = $this->service->cadastroRapido('Perfume Essencial');
-
-        $this->assertTrue($produto->exists);
-        $this->assertSame('Perfume Essencial', $produto->nome);
-    }
+    // o cadastroRapido saiu; so o nome continua valendo pelo salvar(), coberto acima
+    // public function testCadastroRapidoSoPrecisaDoNome(): void
+    // {
+    //     $produto = $this->service->cadastroRapido('Perfume Essencial');
+    //
+    //     $this->assertTrue($produto->exists);
+    //     $this->assertSame('Perfume Essencial', $produto->nome);
+    // }
 
     public function testAtualizaOProdutoExistente(): void
     {

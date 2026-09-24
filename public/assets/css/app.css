@@ -944,3 +944,107 @@ h2 {
 
 /* o Sair do cabecalho: um form de um botao so, porque sair e POST */
 .usuario form { margin: 0; }
+
+/* ------------------------------------------------------- escolha em modal */
+
+/* componentes/escolha.php: caixa + "Escolher" e, ao lado, o "+ Novo" */
+.escolha-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.escolha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.escolha-linha .botao {
+  height: 42px;
+  white-space: nowrap;
+}
+
+/* so leitura: parece campo, mas quem muda e o modal */
+.escolha-atual {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  border: var(--traco);
+  background: var(--surface-muted);
+  font: var(--text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.escolha-vazia {
+  color: var(--ink-subtle);
+}
+
+.campo-invalido .escolha-atual {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.escolha-busca {
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.escolha-lista {
+  max-height: 50vh;
+  overflow-y: auto;
+  border: var(--traco);
+}
+
+/* o cabecalho fica parado enquanto a grade rola */
+.escolha-tabela thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.escolha-coluna-marca {
+  width: 44px;
+}
+
+.escolha-tabela tbody tr {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* marcou um, os outros recuam: a escolha salta aos olhos */
+.escolha-tabela tbody tr.escolha-ofuscada {
+  opacity: .4;
+}
+
+.escolha-tabela tbody tr.escolha-marcada {
+  background: var(--accent-soft);
+}
+
+/* radio com cara de checkbox: quadrado, traco grosso, o check desenhado em SVG */
+.escolha-radio {
+  appearance: none;
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: var(--traco);
+  background: var(--surface-card);
+  cursor: pointer;
+}
+
+.escolha-radio:checked {
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='%232a2623' stroke-width='2.5'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+
+.escolha-radio:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

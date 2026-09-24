@@ -75,26 +75,44 @@ final class ProdutoController extends FeatureController
         Redirecionamento::para(self::URL_LISTA)->enviar();
     }
 
-    /**
-     * Cadastro so com o nome, pedido de dentro do modal do pedido. Responde
-     * JSON: a tela de tras nao pode recarregar.
-     */
-    public function rapido(): void
-    {
-        $nome = trim($this->request->texto('nome'));
+    // trocado pelo criar(): o pedido agora usa o cadastro completo
+    // public function rapido(): void
+    // {
+    //     $nome = trim($this->request->texto('nome'));
+    //
+    //     try {
+    //         $produto = $this->service->cadastroRapido($nome);
+    //     } catch (DadosInvalidosException $e) {
+    //         $this->setView(new JsonView(['ok' => false, 'erro' => implode(' ', $e->erros())], 422));
+    //
+    //         return;
+    //     }
+    //
+    //     $this->setView(new JsonView([
+    //         'ok' => true,
+    //         'id' => (int) $produto->id,
+    //         'nome' => (string) $produto->nome,
+    //     ]));
+    // }
 
+    /**
+     * O cadastro normal, pedido de dentro do modal do pedido. Responde JSON: a
+     * tela de tras nao pode recarregar, ela tem o lancamento pela metade.
+     */
+    public function criar(): void
+    {
         try {
-            $produto = $this->service->cadastroRapido($nome);
+            $produto = $this->service->salvar(null, $this->request->corpo());
         } catch (DadosInvalidosException $e) {
-            $this->setView(new JsonView(['ok' => false, 'erro' => implode(' ', $e->erros())], 422));
+            $this->setView(new JsonView(['ok' => false, 'erros' => $e->erros()], 422));
 
             return;
         }
 
+        // o mesmo formato da grade de escolha do pedido, que recebe o item pronto
         $this->setView(new JsonView([
             'ok' => true,
-            'id' => (int) $produto->id,
-            'nome' => (string) $produto->nome,
+            'item' => $produto->load('genero')->paraEscolha(),
         ]));
     }
 

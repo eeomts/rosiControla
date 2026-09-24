@@ -58,4 +58,23 @@ class Produto extends Model
     {
         return $query->orderBy('nome');
     }
+
+    # ---------------------------------------------------------------- ESTADO
+
+    /**
+     * Uma linha da grade de escolha (componentes/escolha.php). A lista do pedido e
+     * a resposta do "+ Novo" saem daqui, senao o item novo chega com outro formato.
+     *
+     * @return array{id: int, nome: string, codigo: string, genero: string}
+     */
+    public function paraEscolha(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'nome' => (string) $this->nome,
+            'codigo' => (string) ($this->codigo_produto ?? ''),
+            // 'genero' => (string) ($this->genero?->nome ?? ''),
+            'genero' => (string) ($this->genero?->sigla() ?? ''),
+        ];
+    }
 }

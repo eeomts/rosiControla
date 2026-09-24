@@ -58,6 +58,23 @@ final class ProdutoTest extends TestCase
         $this->assertSame('Feminino', $produto->genero->nome);
     }
 
+    public function testGeneroViraSiglaNaGradeDeEscolha(): void
+    {
+        foreach (['Feminino' => 'F', 'Masculino' => 'M', 'Unissex' => 'U'] as $nome => $sigla) {
+            $genero = Genero::create(['nome' => $nome]);
+            $produto = Produto::create(['nome' => "Produto {$nome}", 'fk_genero' => $genero->id]);
+
+            $this->assertSame($sigla, $produto->paraEscolha()['genero']);
+        }
+    }
+
+    public function testSemGeneroASiglaFicaVazia(): void
+    {
+        $produto = Produto::create(['nome' => 'Sabonete']);
+
+        $this->assertSame('', $produto->paraEscolha()['genero']);
+    }
+
     public function testDoGeneroSeparaOCatalogo(): void
     {
         $feminino = Genero::create(['nome' => 'Feminino']);

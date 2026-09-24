@@ -18,5 +18,8 @@ config.ini
 #refs
 archives/
 
-#node: so para vendorizar os icones em public/assets/icons
+#node 
 node_modules/
+
+# porta do banco do Docker aberta so na maquina de dev
+compose.override.yml

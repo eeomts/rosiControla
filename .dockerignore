@@ -17,4 +17,5 @@ TODO/
 .dockerignore
 .gitignore
 compose.yml
+compose.override.yml
 node_modules/

@@ -3,11 +3,12 @@
 namespace Controla\Services;
 
 use Controla\Email\EmailNaoEnviadoException;
+use Controla\Email\Modelo;
 use Controla\Email\Remetente;
 use Controla\Models\Usuario;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\EmailNaoConfirmadoException;
-use Cubo\Security;
+// use Cubo\Security;
 use Illuminate\Support\Carbon;
 use RuntimeException;
 
@@ -28,7 +29,10 @@ final class AutenticacaoService
 
     private const LOGIN_RECUSADO = 'Email ou senha incorretos.';
 
-    public function __construct(private readonly Remetente $remetente) {}
+    public function __construct(
+        private readonly Remetente $remetente,
+        private readonly Modelo $modelo = new Modelo(),
+    ) {}
 
     public function cadastroAberto(): bool
     {
@@ -72,11 +76,17 @@ final class AutenticacaoService
         $usuario->num_tentativas = 0;
         $usuario->save();
 
+        $dados = [
+            'nome' => (string) $usuario->nome,
+            'codigo' => $codigo,
+            'minutos' => self::MINUTOS_CODIGO,
+        ];
+
         $this->remetente->enviar(
             (string) $usuario->email,
             "Seu codigo do Controla: {$codigo}",
-            $this->html($usuario, $codigo),
-            $this->texto($usuario, $codigo),
+            $this->modelo->html('codigo', $dados),
+            $this->modelo->texto('codigo', $dados),
         );
     }
 
@@ -228,18 +238,4 @@ final class AutenticacaoService
         ]);
     }
 
-    private function html(Usuario $usuario, string $codigo): string
-    {
-        return '<p>Ola, ' . Security::escape((string) $usuario->nome) . '.</p>'
-            . '<p>Seu codigo para entrar no Controla:</p>'
-            . '<p style="font-size:28px;font-weight:700;letter-spacing:6px">' . $codigo . '</p>'
-            . '<p>Ele vale por ' . self::MINUTOS_CODIGO . ' minutos. Se nao foi voce, ignore este email.</p>';
-    }
-
-    private function texto(Usuario $usuario, string $codigo): string
-    {
-        return "Ola, {$usuario->nome}.\n\n"
-            . "Seu codigo para entrar no Controla: {$codigo}\n\n"
-            . 'Ele vale por ' . self::MINUTOS_CODIGO . " minutos. Se nao foi voce, ignore este email.\n";
-    }
 }

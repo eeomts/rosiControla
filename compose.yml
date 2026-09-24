@@ -14,8 +14,10 @@ services:
       CONTROLA_SITE: ${CONTROLA_SITE:?suba pelo ./deploy/controla}
     ports:
       - "${CONTROLA_PORTA_HTTP:-80}:80"
-      - "443:443"
-      - "443:443/udp"
+      # atras do nginx do host vira "127.0.0.1:" -> 127.0.0.1::443, porta
+      # aleatoria so local: a 443 publica fica com o nginx, e o Caddy nem escuta nela
+      - "${CONTROLA_PORTA_HTTPS:-443}:443"
+      - "${CONTROLA_PORTA_HTTPS:-443}:443/udp"
     volumes:
       - caddy:/data
       - caddy-config:/config

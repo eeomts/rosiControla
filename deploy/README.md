@@ -59,6 +59,50 @@ Entao:
 O boot demora ~30s na primeira vez: o MariaDB inicializa, o `app` espera o
 healthcheck, aplica as migrations e so entao aceita requisicao.
 
+**Logo depois do boot, crie a conta.** Com o banco vazio o `/cadastro` fica
+aberto, e quem chegar primeiro vira a dona do sistema -- dominio com
+certificado novo recebe visita de robo em minutos. Confira que so a sua existe:
+
+```sh
+./deploy/controla exec db sh -c 'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" -e "SELECT id, nome, email FROM usuario"'
+```
+
+O codigo de confirmacao sai pelo `[email]` do `config.ini` (host, porta, usuario,
+senha de app codificada). Sem ele a conta nasce e o codigo nunca chega.
+
+## VPS que ja tem nginx (outros projetos)
+
+Se um nginx do host ja ocupa 80/443, o Caddy nao sobe ("address already in
+use"). Nao derrube o nginx: ponha o Controla atras dele.
+
+```
+internet :443 -> nginx do host (TLS pelo certbot)
+                   -> 127.0.0.1:8081 -> Caddy (so HTTP) -> php-fpm -> MariaDB
+```
+
+No `config/config.ini`, alem do resto:
+
+```ini
+host.wan = https://controla.SEU-DOMINIO.com/
+proxy.wan = 127.0.0.1:8081
+```
+
+Com o `proxy.wan` preenchido, o `./deploy/controla` troca o endereco do Caddy
+por `:80` (sem certificado) e publica a porta so em `127.0.0.1`. Depois:
+
+```sh
+./deploy/controla up -d --build
+curl -I -H 'Host: controla.SEU-DOMINIO.com' http://127.0.0.1:8081/login   # 200
+
+sudo cp deploy/nginx-controla.conf /etc/nginx/sites-available/controla
+sudo nano /etc/nginx/sites-available/controla     # server_name e porta
+sudo ln -s /etc/nginx/sites-available/controla /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d controla.SEU-DOMINIO.com
+```
+
+A porta tem de ser livre: `sudo ss -ltnp | grep 8081` sem saida.
+
 ## Atualizar
 
 ```sh

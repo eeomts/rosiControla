@@ -6,6 +6,7 @@
 # O endereco vem do host.<location> do config.ini, pelo ./deploy/controla.
 # https://dominio -> certificado emitido e renovado sozinho;
 # http://localhost -> HTTP puro, sem certificado.
+# :80 -> atras do nginx do host (proxy.<location>), que cuida do certificado.
 {$CONTROLA_SITE} {
 
 	root * /var/www/html/public

@@ -68,8 +68,24 @@ case "$AUTORIDADE" in
         ;;
 esac
 
-export CONTROLA_SITE="$ESQUEMA://$AUTORIDADE"
-export CONTROLA_PORTA_HTTP="$PORTA_HTTP"
+# proxy.<location>: um nginx do host ja ocupa 80/443 e fica na frente, com o
+# TLS. O Caddy vira HTTP puro numa porta que so a propria maquina enxerga.
+PROXY=$(ini cubo "proxy\.$LOCATION")
+
+if [ -n "$PROXY" ]; then
+    # so a porta ("8081") publicaria em 0.0.0.0 e abriria um atalho sem TLS
+    case "$PROXY" in
+        *:*) ;;
+        *) PROXY="127.0.0.1:$PROXY" ;;
+    esac
+
+    export CONTROLA_SITE=":80"
+    export CONTROLA_PORTA_HTTP="$PROXY"
+    export CONTROLA_PORTA_HTTPS="127.0.0.1:"
+else
+    export CONTROLA_SITE="$ESQUEMA://$AUTORIDADE"
+    export CONTROLA_PORTA_HTTP="$PORTA_HTTP"
+fi
 
 # --------------------------------------------------------------------- banco
 

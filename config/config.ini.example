@@ -21,6 +21,11 @@ host.local = http://localhost:8123/
 host.docker = http://localhost/
 host.wan = https://controla.SEU-DOMINIO.com/
 
+; So quando um nginx do host ja ocupa 80/443 (outros projetos na VPS): o Caddy
+; vira HTTP nesta porta local e o nginx repassa. Ver deploy/nginx-controla.conf.
+; Vazio, o Caddy fica com 80/443 e emite o certificado sozinho.
+; proxy.wan = 127.0.0.1:8081
+
 ; qualquer coisa != development manda a excecao para o log em vez da tela
 enviroment = development
 servidor = LOCAL

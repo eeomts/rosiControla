@@ -4,6 +4,7 @@ namespace Controla\Tests\Services;
 
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
+use Controla\Models\Categoria;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
 use Controla\Models\VariacaoProduto;
@@ -33,7 +34,7 @@ final class ProdutoServiceTest extends TestCase
     {
         $genero = Genero::create(['nome' => 'Feminino']);
 
-        $produto = $this->service->salvar(null, [
+        $produto = $this->salvarNovo([
             'nome' => '  Batom Vermelho Intenso  ',
             'codigo_produto' => '82345',
             'fk_genero' => (string) $genero->id,
@@ -46,22 +47,22 @@ final class ProdutoServiceTest extends TestCase
 
     public function testGeneroVazioViraNuloEmVezDeZero(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Sabonete', 'fk_genero' => '']);
+        $produto = $this->salvarNovo(['nome' => 'Sabonete', 'fk_genero' => '']);
 
         $this->assertNull($produto->fk_genero);
     }
 
     public function testCodigoVazioViraNulo(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Sabonete', 'codigo_produto' => '']);
+        $produto = $this->salvarNovo(['nome' => 'Sabonete', 'codigo_produto' => '']);
 
         $this->assertNull($produto->codigo_produto);
     }
 
     public function testDoisProdutosSemCodigoConvivem(): void
     {
-        $this->service->salvar(null, ['nome' => 'Sabonete']);
-        $this->service->salvar(null, ['nome' => 'Hidratante']);
+        $this->salvarNovo(['nome' => 'Sabonete']);
+        $this->salvarNovo(['nome' => 'Hidratante']);
 
         $this->assertCount(2, Produto::getRecords());
     }
@@ -77,7 +78,7 @@ final class ProdutoServiceTest extends TestCase
 
     public function testAtualizaOProdutoExistente(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom Vermelho']);
+        $produto = $this->salvarNovo(['nome' => 'Batom Vermelho']);
 
         $atualizado = $this->service->salvar($produto->id, ['nome' => 'Batom Vermelho Matte']);
 
@@ -102,7 +103,7 @@ final class ProdutoServiceTest extends TestCase
 
     public function testRecusaCodigoRepetido(): void
     {
-        $this->service->salvar(null, ['nome' => 'Batom Vermelho', 'codigo_produto' => '82345']);
+        $this->salvarNovo(['nome' => 'Batom Vermelho', 'codigo_produto' => '82345']);
 
         $erros = $this->errosAoSalvar(null, ['nome' => 'Outro Batom', 'codigo_produto' => '82345']);
 
@@ -111,7 +112,7 @@ final class ProdutoServiceTest extends TestCase
 
     public function testManterOProprioCodigoNaEdicaoNaoAcusaRepeticao(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom', 'codigo_produto' => '82345']);
+        $produto = $this->salvarNovo(['nome' => 'Batom', 'codigo_produto' => '82345']);
 
         $atualizado = $this->service->salvar($produto->id, [
             'nome' => 'Batom Matte',
@@ -123,12 +124,48 @@ final class ProdutoServiceTest extends TestCase
 
     public function testProdutoExcluidoNaoBloqueiaOCodigo(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom', 'codigo_produto' => '82345']);
+        $produto = $this->salvarNovo(['nome' => 'Batom', 'codigo_produto' => '82345']);
         $produto->delete();
 
-        $novo = $this->service->salvar(null, ['nome' => 'Batom Novo', 'codigo_produto' => '82345']);
+        $novo = $this->salvarNovo(['nome' => 'Batom Novo', 'codigo_produto' => '82345']);
 
         $this->assertTrue($novo->exists);
+    }
+
+    # ------------------------------------------------------------ CATEGORIA
+
+    public function testGuardaACategoria(): void
+    {
+        $cabelos = Categoria::idPorNome('Cabelos');
+
+        $produto = $this->salvarNovo(['nome' => 'Shampoo Lumina', 'fk_categoria' => (string) $cabelos]);
+
+        $this->assertSame($cabelos, $produto->fk_categoria);
+        $this->assertSame('Cabelos', $produto->categoria->nome);
+    }
+
+    public function testExigeCategoriaNoProdutoNovo(): void
+    {
+        $erros = $this->errosAoSalvar(null, ['nome' => 'Batom', 'fk_categoria' => '']);
+
+        $this->assertSame('Escolha a categoria do produto.', $erros['fk_categoria'] ?? null);
+    }
+
+    public function testRecusaCategoriaInexistente(): void
+    {
+        $erros = $this->errosAoSalvar(null, ['nome' => 'Batom', 'fk_categoria' => 999]);
+
+        $this->assertSame('A categoria selecionada nao existe.', $erros['fk_categoria'] ?? null);
+    }
+
+    /** O produto de antes da categoria: editar obriga a escolher uma. */
+    public function testEditarProdutoSemCategoriaPedeUma(): void
+    {
+        $antigo = Produto::create(['nome' => 'Batom de antes']);
+
+        $erros = $this->errosAoSalvar((int) $antigo->id, ['nome' => 'Batom de antes']);
+
+        $this->assertArrayHasKey('fk_categoria', $erros);
     }
 
     public function testReclamaDeIdInexistente(): void
@@ -142,9 +179,9 @@ final class ProdutoServiceTest extends TestCase
 
     public function testListaEmOrdemAlfabetica(): void
     {
-        $this->service->salvar(null, ['nome' => 'Sabonete']);
-        $this->service->salvar(null, ['nome' => 'Batom']);
-        $this->service->salvar(null, ['nome' => 'Creme']);
+        $this->salvarNovo(['nome' => 'Sabonete']);
+        $this->salvarNovo(['nome' => 'Batom']);
+        $this->salvarNovo(['nome' => 'Creme']);
 
         $this->assertSame(
             ['Batom', 'Creme', 'Sabonete'],
@@ -154,8 +191,8 @@ final class ProdutoServiceTest extends TestCase
 
     public function testFiltraPeloNomeOuPeloCodigo(): void
     {
-        $this->service->salvar(null, ['nome' => 'Batom Una', 'codigo_produto' => 'B-100']);
-        $this->service->salvar(null, ['nome' => 'Creme Tododia', 'codigo_produto' => 'C-200']);
+        $this->salvarNovo(['nome' => 'Batom Una', 'codigo_produto' => 'B-100']);
+        $this->salvarNovo(['nome' => 'Creme Tododia', 'codigo_produto' => 'C-200']);
 
         $this->assertCount(1, $this->service->listar('batom'));
         $this->assertCount(1, $this->service->listar('C-200'));
@@ -164,7 +201,7 @@ final class ProdutoServiceTest extends TestCase
 
     public function testEncontraPeloId(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+        $produto = $this->salvarNovo(['nome' => 'Batom']);
 
         $this->assertSame($produto->id, $this->service->encontrar($produto->id)->id);
     }
@@ -178,7 +215,7 @@ final class ProdutoServiceTest extends TestCase
 
     public function testExcluiSemApagarALinha(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+        $produto = $this->salvarNovo(['nome' => 'Batom']);
 
         $excluido = $this->service->excluir($produto->id);
 
@@ -190,7 +227,7 @@ final class ProdutoServiceTest extends TestCase
     /** Sem isto, a unidade ficaria apontando para um produto invisivel. */
     public function testNaoExcluiProdutoComUnidadeCadastrada(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+        $produto = $this->salvarNovo(['nome' => 'Batom']);
         $this->criarUnidade($produto);
 
         $this->expectException(RegistroEmUsoException::class);
@@ -200,7 +237,7 @@ final class ProdutoServiceTest extends TestCase
 
     public function testProdutoComUnidadeContinuaNaLista(): void
     {
-        $produto = $this->service->salvar(null, ['nome' => 'Batom']);
+        $produto = $this->salvarNovo(['nome' => 'Batom']);
         $this->criarUnidade($produto);
 
         try {
@@ -229,6 +266,15 @@ final class ProdutoServiceTest extends TestCase
             'mon_venda' => '30.00',
             'vendido' => 0,
         ]);
+    }
+
+    /**
+     * Cadastro novo com uma categoria valida, a nao ser que o teste mande a dele.
+     * @param array<string,mixed> $dados
+     */
+    private function salvarNovo(array $dados): Produto
+    {
+        return $this->service->salvar(null, $dados + ['fk_categoria' => (string) Categoria::idPorNome('Perfumaria')]);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Controla\Tests\Models;
 
+use Controla\Models\Categoria;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
 use Controla\Tests\Support\ControlaSchema;
@@ -66,6 +67,13 @@ final class ProdutoTest extends TestCase
 
             $this->assertSame($sigla, $produto->paraEscolha()['genero']);
         }
+    }
+
+    public function testGradeDeEscolhaMostraACategoria(): void
+    {
+        $produto = Produto::create(['nome' => 'Kaiak 100ml', 'fk_categoria' => Categoria::idPorNome('Perfumaria')]);
+
+        $this->assertSame('Perfumaria', $produto->paraEscolha()['categoria']);
     }
 
     public function testSemGeneroASiglaFicaVazia(): void

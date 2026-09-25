@@ -4,6 +4,7 @@ namespace Controla\Controllers;
 
 use Controla\Controllers\Base\FeatureController;
 use Controla\Filtro\Valores;
+use Controla\Models\Categoria;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
 use Controla\Services\ProdutoService;
@@ -21,7 +22,7 @@ final class ProdutoController extends FeatureController
 {
     private const URL_LISTA = '/produto';
 
-    protected const CAMPOS = ['nome', 'codigo_produto', 'fk_genero'];
+    protected const CAMPOS = ['nome', 'codigo_produto', 'fk_categoria', 'fk_genero'];
 
     private ProdutoService $service;
 
@@ -109,10 +110,9 @@ final class ProdutoController extends FeatureController
             return;
         }
 
-        // o mesmo formato da grade de escolha do pedido, que recebe o item pronto
         $this->setView(new JsonView([
             'ok' => true,
-            'item' => $produto->load('genero')->paraEscolha(),
+            'item' => $produto->load(['categoria', 'genero'])->paraEscolha(),
         ]));
     }
 
@@ -142,13 +142,14 @@ final class ProdutoController extends FeatureController
         $filtros = Valores::deRequest($this->request->query(), $definicao);
 
         $this->pagina('Produtos', 'produto/lista.php', [
-            'produtos' => $this->service->listar(null, $filtros)->load('genero'),
+            'produtos' => $this->service->listar(null, $filtros)->load(['categoria', 'genero']),
             'filtro_definicao' => $definicao,
             'filtro_valores' => $filtros,
             'modal_aberto' => $modalAberto,
             'id' => $id,
             'valores' => $valores,
             'erros' => $erros,
+            'categorias' => Categoria::paraSelect(),
             'generos' => Genero::paraSelect(),
         ]);
     }
@@ -159,6 +160,7 @@ final class ProdutoController extends FeatureController
         return [
             'nome' => (string) $produto->nome,
             'codigo_produto' => (string) $produto->codigo_produto,
+            'fk_categoria' => (string) $produto->fk_categoria,
             'fk_genero' => (string) $produto->fk_genero,
         ];
     }

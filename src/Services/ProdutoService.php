@@ -9,6 +9,7 @@ use Controla\Filtro\Opcoes;
 use Controla\Filtro\Valores;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\RegistroEmUsoException;
+use Controla\Models\Categoria;
 use Controla\Models\Genero;
 use Controla\Models\Produto;
 use Controla\Models\VariacaoProduto;
@@ -60,6 +61,9 @@ final class ProdutoService
     public function filtros(): Definicao
     {
         return new Definicao(
+            Campo::de('fk_categoria', 'Categoria', opcoes: Opcoes::deChamada(
+                static fn (): array => Categoria::paraSelect()
+            )),
             Campo::de('fk_genero', 'Genero', opcoes: Opcoes::deChamada(
                 static fn (): array => Genero::paraSelect()
             )),
@@ -129,10 +133,17 @@ final class ProdutoService
             }
         }
 
-        if (array_key_exists('fk_genero', $dados)) {
-            $dados['fk_genero'] = ($dados['fk_genero'] === '' || $dados['fk_genero'] === null)
-                ? null
-                : (int) $dados['fk_genero'];
+        // if (array_key_exists('fk_genero', $dados)) {
+        //     $dados['fk_genero'] = ($dados['fk_genero'] === '' || $dados['fk_genero'] === null)
+        //         ? null
+        //         : (int) $dados['fk_genero'];
+        // }
+
+        // o select manda '' para "nenhum"; no banco isso e null
+        foreach (['fk_categoria', 'fk_genero'] as $campo) {
+            if (array_key_exists($campo, $dados)) {
+                $dados[$campo] = ($dados[$campo] === '' || $dados[$campo] === null) ? null : (int) $dados[$campo];
+            }
         }
 
         if (($dados['codigo_produto'] ?? null) === '') {
@@ -151,6 +162,13 @@ final class ProdutoService
 
         if (trim((string) $produto->nome) === '') {
             $erros['nome'] = 'Informe o nome do produto.';
+        }
+
+        
+        if ($produto->fk_categoria === null) {
+            $erros['fk_categoria'] = 'Escolha a categoria do produto.';
+        } elseif (Categoria::findById($produto->fk_categoria) === null) {
+            $erros['fk_categoria'] = 'A categoria selecionada nao existe.';
         }
 
         if ($produto->fk_genero !== null && Genero::findById($produto->fk_genero) === null) {

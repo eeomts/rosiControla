@@ -18,14 +18,20 @@ class Produto extends Model
     protected $table = 'produto';
 
     protected $fillable = [
-        'nome', 'codigo_produto', 'fk_genero',
+        'nome', 'codigo_produto', 'fk_categoria', 'fk_genero',
     ];
 
     protected $casts = [
+        'fk_categoria' => 'integer',
         'fk_genero' => 'integer',
     ];
 
     # -------------------------------------------------------------- RELACOES
+
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(Categoria::class, 'fk_categoria', 'id');
+    }
 
     public function genero(): BelongsTo
     {
@@ -62,10 +68,7 @@ class Produto extends Model
     # ---------------------------------------------------------------- ESTADO
 
     /**
-     * Uma linha da grade de escolha (componentes/escolha.php). A lista do pedido e
-     * a resposta do "+ Novo" saem daqui, senao o item novo chega com outro formato.
-     *
-     * @return array{id: int, nome: string, codigo: string, genero: string}
+     * @return array{id: int, nome: string, codigo: string, categoria: string, genero: string}
      */
     public function paraEscolha(): array
     {
@@ -73,6 +76,7 @@ class Produto extends Model
             'id' => (int) $this->id,
             'nome' => (string) $this->nome,
             'codigo' => (string) ($this->codigo_produto ?? ''),
+            'categoria' => (string) ($this->categoria?->nome ?? ''),
             // 'genero' => (string) ($this->genero?->nome ?? ''),
             'genero' => (string) ($this->genero?->sigla() ?? ''),
         ];

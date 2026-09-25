@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-ini_set("display_erros", 1);
+// ini_set("display_errors", 1);
 
 use Controla\Middleware\AutenticacaoMiddleware;
 use Controla\Middleware\CsrfMiddleware;

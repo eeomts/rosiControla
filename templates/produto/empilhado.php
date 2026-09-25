@@ -1,20 +1,14 @@
 <?php
 
-/**
- * O cadastro normal de produto num modal por cima do lancamento do pedido.
- * Quem inclui define $generos (id => nome).
- *
- * Os campos nao tem name nem required: estao dentro do <form> de lancar, e
- * iriam junto no envio dele -- ou, escondidos e obrigatorios, o bloqueariam.
- */
 
 use Cubo\Security;
 
+$categorias = (array) ($categorias ?? []);
 $generos = (array) ($generos ?? []);
 
 ?>
-<!-- produto-criado: a escolha de produto do pedido escuta e ja deixa o novo escolhido -->
-<span x-data="cadastroEmpilhado('/produto/criar', 'produto-criado', { nome: '', codigo_produto: '', fk_genero: '' })"
+
+<span x-data="cadastroEmpilhado('/produto/criar', 'produto-criado', { nome: '', codigo_produto: '', fk_categoria: '', fk_genero: '' })"
     @keydown.escape.window.stop="aberto && fechar()">
 
     <button type="button" class="botao botao-contorno" @click="abrir()">+ Novo</button>
@@ -32,7 +26,7 @@ $generos = (array) ($generos ?? []);
                 </button>
             </div>
 
-            <!-- o Enter nao pode submeter o form de lancar, que esta em volta -->
+            
             <div class="modal-corpo" @keydown.enter.prevent="salvar()">
 
                 <p class="erro" x-show="erro !== ''" x-cloak x-text="erro"></p>
@@ -41,6 +35,17 @@ $generos = (array) ($generos ?? []);
                     <label for="empilhado-nome">Nome</label>
                     <input id="empilhado-nome" type="text" maxlength="160" x-ref="primeiro" x-model="dados.nome">
                     <p class="erro" x-show="erros.nome" x-cloak x-text="erros.nome"></p>
+                </div>
+
+                <div class="campo" :class="erros.fk_categoria ? 'campo-invalido' : ''">
+                    <label for="empilhado-categoria">Categoria</label>
+                    <select id="empilhado-categoria" x-model="dados.fk_categoria">
+                        <option value="">Escolha a categoria</option>
+                        <?php foreach ($categorias as $chave => $nome): ?>
+                            <option value="<?= (int) $chave ?>"><?= Security::escape((string) $nome) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p class="erro" x-show="erros.fk_categoria" x-cloak x-text="erros.fk_categoria"></p>
                 </div>
 
                 <div class="dupla">

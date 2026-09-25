@@ -4,6 +4,7 @@ namespace Controla\Controllers;
 
 use Controla\Controllers\Base\FeatureController;
 use Controla\Filtro\Valores;
+use Controla\Models\Categoria;
 use Controla\Models\Ciclo;
 use Controla\Models\Genero;
 use Controla\Models\Pedido;
@@ -197,9 +198,10 @@ final class PedidoController extends FeatureController
             // 'produtos' => $modalAberto ? Produto::query()->ordenado()->pluck('nome', 'id')->all() : [],
             // a grade de escolha mostra nome, codigo e sexo, nao so o nome
             'produtos' => $modalAberto
-                ? Produto::query()->with('genero')->ordenado()->get()->map->paraEscolha()->all()
+                ? Produto::query()->with(['categoria', 'genero'])->ordenado()->get()->map->paraEscolha()->all()
                 : [],
             // o "+ Novo" do lancamento abre o cadastro completo de produto
+            'categorias' => $modalAberto ? Categoria::paraSelect() : [],
             'generos' => $modalAberto ? Genero::paraSelect() : [],
         ]);
     }

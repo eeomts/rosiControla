@@ -12,6 +12,7 @@ use Cubo\Security;
 $id = $view->getParam('id');
 $valores = (array) $view->getParam('valores', []);
 $erros = (array) $view->getParam('erros', []);
+$categorias = (array) $view->getParam('categorias', []);
 $generos = (array) $view->getParam('generos', []);
 
 $valor = static fn(string $campo): string => Security::escape((string) ($valores[$campo] ?? ''));
@@ -36,6 +37,22 @@ $selecionado = static fn(string $campo, $chave): string
                             value="<?= $valor('nome') ?>" required>
                      <?php if ($erro('nome') !== ''): ?>
                             <p class="erro"><?= Security::escape($erro('nome')) ?></p>
+                     <?php endif; ?>
+              </div>
+
+              <div class="campo <?= $erro('fk_categoria') !== '' ? 'campo-invalido' : '' ?>">
+                     <label for="fk_categoria">Categoria</label>
+                     <select id="fk_categoria" name="fk_categoria" required>
+                            <option value="">Escolha a categoria</option>
+                            <?php foreach ($categorias as $chave => $nome): ?>
+                                   <option value="<?= (int) $chave ?>" <?= $selecionado('fk_categoria', $chave) ?>>
+                                          <?= Security::escape((string) $nome) ?>
+                                   </option>
+                            <?php endforeach; ?>
+                     </select>
+                     <p class="dica">A mesma da revista.</p>
+                     <?php if ($erro('fk_categoria') !== ''): ?>
+                            <p class="erro"><?= Security::escape($erro('fk_categoria')) ?></p>
                      <?php endif; ?>
               </div>
 

@@ -17,7 +17,7 @@ $termos = [];
 
 foreach ($produtos as $produto) {
     $termos[$produto->id] = mb_strtolower(
-        $produto->nome . ' ' . $produto->codigo_produto . ' ' . $produto->genero?->nome
+        $produto->nome . ' ' . $produto->codigo_produto . ' ' . $produto->categoria?->nome . ' ' . $produto->genero?->nome
     );
 }
 
@@ -30,14 +30,12 @@ HTML); ?>
 <div x-data='listaFiltravel(<?= json_encode(array_values($termos), $emAtributo) ?>)'>
 
     <?php
-    // a busca instantanea entra na mesma linha dos filtros; o x-model vale
-    // porque o form do filtro fica dentro deste x-data
+
     $view->addParam('filtro_extra', <<<'HTML'
     <div class="campo cresce">
         <label for="busca-lista">Busca rapida</label>
-        <!-- Enter aqui recarregaria a pagina (o form e GET) e perderia o que ela digitou -->
         <input id="busca-lista" class="busca" type="search" x-model="busca"
-            @keydown.enter.prevent placeholder="Nome, codigo ou genero">
+            @keydown.enter.prevent placeholder="Nome, codigo, categoria ou genero">
     </div>
     HTML);
 
@@ -59,6 +57,7 @@ HTML); ?>
                     <tr>
                         <th>Produto</th>
                         <th>Codigo</th>
+                        <th>Categoria</th>
                         <th>Genero</th>
                         <th></th>
                     </tr>
@@ -74,12 +73,18 @@ HTML); ?>
                                     <span class="dica">sem codigo</span>
                                 <?php endif; ?>
                             </td>
+                            <td>
+                                <?php if ($produto->categoria !== null): ?>
+                                    <?= Security::escape((string) $produto->categoria->nome) ?>
+                                <?php else: ?>
+                                    <span class="dica">sem categoria</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= Security::escape((string) $produto->genero?->nome) ?></td>
                             <td>
                                 <div class="acoes">
                                     <a class="botao botao-contorno" href="/produto/form/<?= (int) $produto->id ?>">Editar</a>
 
-                                    <!-- sem JS o form posta de primeira; com Alpine o 1o clique arma a confirmacao -->
                                     <form method="post" action="/produto/excluir"
                                         x-data="confirmacao"
                                         @submit="armar($event)"

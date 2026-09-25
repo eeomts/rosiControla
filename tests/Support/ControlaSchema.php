@@ -2,6 +2,7 @@
 
 namespace Controla\Tests\Support;
 
+use Controla\Models\Categoria;
 use Controla\Models\StatusEntrega;
 use Controla\Models\StatusPagamento;
 use Cubo\Database\Db;
@@ -43,6 +44,7 @@ final class ControlaSchema
             $table->increments('id');
             $table->string('nome', 160);
             $table->string('codigo_produto', 30)->nullable();
+            $table->integer('fk_categoria')->nullable();
             $table->integer('fk_genero')->nullable();
             $table->timestamp('created')->nullable();
             $table->timestamp('updated')->nullable();
@@ -101,7 +103,7 @@ final class ControlaSchema
             $table->integer('deleted')->default(0);
         });
 
-        foreach (['status_pagamento_aux', 'status_entrega_aux'] as $aux) {
+        foreach (['status_pagamento_aux', 'status_entrega_aux', 'categoria_aux'] as $aux) {
             $schema->dropIfExists($aux);
             $schema->create($aux, function (Blueprint $table): void {
                 $table->increments('id');
@@ -166,5 +168,10 @@ final class ControlaSchema
 
         StatusEntrega::create(['nome' => 'Nao entregue']);
         StatusEntrega::create(['nome' => 'Entregue']);
+
+        // as mesmas da migration: o ProdutoService exige uma
+        foreach (['Perfumaria', 'Rosto e maquiagem', 'Cuidados para o corpo', 'Cabelos', 'Infantis'] as $nome) {
+            Categoria::create(['nome' => $nome]);
+        }
     }
 }

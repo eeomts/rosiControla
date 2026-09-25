@@ -1048,3 +1048,44 @@ h2 {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* ---------------------------------------------------------------- estoque */
+
+.estoque-resumo {
+  margin-bottom: var(--space-5);
+}
+
+.estoque-coluna-abrir {
+  width: 48px;
+}
+
+.estoque tbody tr.estoque-produto {
+  cursor: pointer;
+  background: var(--surface-card);
+}
+
+.estoque tbody tr.estoque-lote {
+  background: var(--surface-muted);
+  font: var(--text-body-sm);
+}
+
+.estoque tbody tr.estoque-lote td:nth-child(2) {
+  padding-left: var(--space-6);
+}
+
+.estoque tbody + tbody tr.estoque-produto td {
+  border-top: var(--traco);
+}
+
+.estoque strong + .dica,
+.estoque .selo + .dica {
+  display: block;
+  margin: var(--space-1) 0 0;
+}
+
+.estoque-abrir {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+}

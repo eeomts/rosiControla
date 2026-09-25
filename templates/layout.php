@@ -17,6 +17,7 @@ $itens = [
     '/ciclo' => 'Ciclos',
     '/pedido' => 'Pedidos',
     '/produto' => 'Produtos',
+    '/estoque' => 'Estoque',
     '/venda' => 'Vendas',
     '/cliente' => 'Clientes',
     '/conta' => 'Contas',

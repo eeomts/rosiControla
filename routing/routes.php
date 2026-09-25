@@ -11,6 +11,7 @@ use Controla\Controllers\AcessoController;
 use Controla\Controllers\CicloController;
 use Controla\Controllers\ClienteController;
 use Controla\Controllers\DashboardController;
+use Controla\Controllers\EstoqueController;
 use Controla\Controllers\PedidoController;
 use Controla\Controllers\ProdutoController;
 use Controla\Controllers\VendaController;
@@ -50,6 +51,8 @@ $rotas->post('/produto/salvar', ProdutoController::class, 'salvar')->name('produ
 // $rotas->post('/produto/rapido', ProdutoController::class, 'rapido')->name('produto.rapido');
 $rotas->post('/produto/criar', ProdutoController::class, 'criar')->name('produto.criar');
 $rotas->post('/produto/excluir', ProdutoController::class, 'excluir')->name('produto.excluir');
+
+$rotas->get('/estoque', EstoqueController::class, 'index')->name('estoque');
 
 $rotas->get('/pedido', PedidoController::class, 'index')->name('pedido.lista');
 $rotas->get('/pedido/form', PedidoController::class, 'form')->name('pedido.novo');

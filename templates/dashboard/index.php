@@ -81,7 +81,7 @@ $falta = $lucroEstimado - $lucroReal;
         <p class="rotulo">
             unidade(s) disponivel(is), R$ <?= Moeda::brl($estoque['valor'] ?? 0) ?> a preco de venda
         </p>
-        <a class="botao botao-contorno" href="/produto">Ver produtos</a>
+        <a class="botao botao-contorno" href="/estoque">Ver estoque</a>
     </div>
 
     <div class="cartao indicador">

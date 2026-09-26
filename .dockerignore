@@ -19,3 +19,4 @@ TODO/
 compose.yml
 compose.override.yml
 node_modules/
+backups/

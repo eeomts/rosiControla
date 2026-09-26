@@ -7,7 +7,7 @@
 Thumbs.db
 
 TODO/
-
+*md
 
 #claude
 .claude/
@@ -24,3 +24,8 @@ node_modules/
 # porta do banco do Docker aberta so na maquina de dev
 compose.override.yml
 COMO_LIGAR.md
+
+# dumps do banco gerados pelo deploy/backup
+backups/
+
+

@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -eu
+
+cd "$(dirname "$0")/.."
+
+ARQUIVO=${1:-}
+
+if [ -z "$ARQUIVO" ] || [ ! -f "$ARQUIVO" ]; then
+    echo "uso: ./deploy/restaurar backups/controla-AAAA-MM-DD_HHMM.sql.gz" >&2
+    exit 1
+fi
+
+gzip -t "$ARQUIVO" || { echo "erro: $ARQUIVO esta corrompido" >&2; exit 1; }
+
+echo "Isto SUBSTITUI todo o banco pelo conteudo de:"
+echo "  $ARQUIVO"
+printf 'Para confirmar, digite RESTAURAR: '
+read -r resposta
+
+if [ "$resposta" != "RESTAURAR" ]; then
+    echo "cancelado, nada mudou"
+    exit 1
+fi
+
+mkdir -p backups
+ANTES="backups/antes-de-restaurar-$(date '+%Y-%m-%d_%H%M%S').sql.gz"
+
+./deploy/controla exec -T db sh -c \
+    'exec mariadb-dump -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --single-transaction --routines --triggers --default-character-set=utf8mb4 "$MARIADB_DATABASE"' \
+    | gzip -9 > "$ANTES"
+
+gzip -dc "$ANTES" | tail -n 1 | grep -q 'Dump completed' \
+    || { echo "erro: nao consegui guardar o estado atual; parei antes de mexer no banco" >&2; exit 1; }
+
+echo "estado atual guardado em $ANTES"
+
+gzip -dc "$ARQUIVO" | ./deploy/controla exec -T db sh -c \
+    'exec mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE"'
+
+echo "restaurado a partir de $ARQUIVO"

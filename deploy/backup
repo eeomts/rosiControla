@@ -1,0 +1,132 @@
+#!/bin/sh
+
+set -u
+
+cd "$(dirname "$0")/.."
+
+INI="config/config.ini"
+PASTA="backups"
+LOG="$PASTA/backup.log"
+
+DIAS_NO_DRIVE=30
+DIAS_DOS_MENSAIS=365
+
+
+ini() {
+    sed -n "/^[[:space:]]*\[$1\]/,/^[[:space:]]*\[/p" "$INI" \
+        | sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" \
+        | head -n 1 | tr -d '"\r'
+}
+
+log() {
+    printf '%s %s\n' "$(date '+%F %T')" "$*"
+}
+
+
+destino() {
+    case "$REMOTO" in
+        *:) printf '%s%s' "$REMOTO" "$1" ;;
+        *) printf '%s/%s' "${REMOTO%/}" "$1" ;;
+    esac
+}
+
+
+avisar() {
+    if ! ./deploy/controla exec -T app php bin/avisar "$1"; then
+        log "ATENCAO: nao consegui mandar o email de aviso"
+    fi
+}
+
+falhar() {
+    log "ERRO: $1"
+    rm -f "$ARQUIVO.parcial"
+
+    {
+        printf 'O backup do Controla FALHOU em %s.\n\n' "$(date '+%d/%m/%Y %H:%M')"
+        printf 'Etapa: %s\n\n' "$1"
+        printf 'O banco NAO foi alterado; so a copia de hoje nao existe.\n\n'
+        printf 'Ultimas linhas do log (%s):\n%s\n' "$LOG" "$(tail -n 20 "$LOG" 2>/dev/null)"
+    } | avisar "[Controla] Backup FALHOU - $(date '+%d/%m')"
+
+    exit 1
+}
+
+mkdir -p "$PASTA"
+
+NOME="controla-$(date '+%Y-%m-%d_%H%M').sql.gz"
+ARQUIVO="$PASTA/$NOME"
+INICIO=$(date +%s)
+
+[ -f "$INI" ] || { log "ERRO: $INI nao existe"; exit 1; }
+
+REMOTO=$(ini backup remoto)
+DIAS_LOCAIS=$(ini backup dias_locais)
+DIAS_LOCAIS=${DIAS_LOCAIS:-30}
+
+# ------------------------------------------------------------------ o dump
+
+log "gerando o dump"
+
+
+./deploy/controla exec -T db sh -c \
+    'exec mariadb-dump -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --single-transaction --routines --triggers --default-character-set=utf8mb4 "$MARIADB_DATABASE"' \
+    | gzip -9 > "$ARQUIVO.parcial"
+
+
+gzip -t "$ARQUIVO.parcial" 2>/dev/null || falhar "o arquivo do dump saiu corrompido"
+
+gzip -dc "$ARQUIVO.parcial" | tail -n 1 | grep -q 'Dump completed' \
+    || falhar "o dump parou no meio (sem a marca 'Dump completed' no fim)"
+
+mv "$ARQUIVO.parcial" "$ARQUIVO"
+
+TAMANHO=$(du -h "$ARQUIVO" | cut -f1)
+TABELAS=$(gzip -dc "$ARQUIVO" | grep -c '^CREATE TABLE')
+
+log "dump ok: $NOME ($TAMANHO, $TABELAS tabelas)"
+
+# --------------------------------------------------------- o Google Drive
+
+[ -n "$REMOTO" ] || falhar "o [backup] remoto do config.ini esta vazio"
+command -v rclone >/dev/null 2>&1 || falhar "o rclone nao esta instalado na VPS"
+
+rclone copyto "$ARQUIVO" "$(destino "diarios/$NOME")" || falhar "o envio do dump pro Drive"
+
+MES=$(date '+%Y-%m')
+
+if rclone lsf "$(destino mensais)" 2>/dev/null | grep -q "^controla-$MES"; then
+    MENSAL="o deste mes ja estava guardado"
+else
+    rclone copyto "$ARQUIVO" "$(destino "mensais/$NOME")" || falhar "o envio do backup mensal"
+    MENSAL="guardado como o backup de $(date '+%m/%Y')"
+fi
+
+
+rclone copyto "$INI" "$(destino config/config.ini)" || falhar "o envio do config.ini pro Drive"
+
+rclone delete --min-age "${DIAS_NO_DRIVE}d" "$(destino diarios)" || log "ATENCAO: nao limpei os diarios antigos do Drive"
+rclone delete --min-age "${DIAS_DOS_MENSAIS}d" "$(destino mensais)" || log "ATENCAO: nao limpei os mensais antigos do Drive"
+
+NO_DRIVE=$(rclone lsf "$(destino diarios)" 2>/dev/null | wc -l | tr -d ' ')
+
+log "drive ok: $(destino diarios) ($NO_DRIVE diarios)"
+
+# --------------------------------------------------------- limpeza local
+
+find "$PASTA" -name 'controla-*.sql.gz' -mtime +"$DIAS_LOCAIS" -delete
+NA_VPS=$(find "$PASTA" -name 'controla-*.sql.gz' | wc -l | tr -d ' ')
+
+# ------------------------------------------------------------------ aviso
+
+DURACAO=$(( $(date +%s) - INICIO ))
+
+{
+    printf 'O backup do Controla deu certo.\n\n'
+    printf 'Quando:   %s (levou %ss)\n' "$(date '+%d/%m/%Y %H:%M')" "$DURACAO"
+    printf 'Arquivo:  %s (%s, %s tabelas)\n' "$NOME" "$TAMANHO" "$TABELAS"
+    printf 'Drive:    %s diarios guardados (os ultimos %s dias)\n' "$NO_DRIVE" "$DIAS_NO_DRIVE"
+    printf 'Mensal:   %s\n' "$MENSAL"
+    printf 'Na VPS:   %s copias em %s/ (os ultimos %s dias)\n' "$NA_VPS" "$PASTA" "$DIAS_LOCAIS"
+} | avisar "[Controla] Backup OK - $(date '+%d/%m')"
+
+log "fim"

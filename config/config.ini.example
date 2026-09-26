@@ -109,3 +109,12 @@ usuario = seu-email@gmail.com
 senha =
 remetente = seu-email@gmail.com
 nome_remetente = Controla
+
+[backup]
+; Lido pelo deploy/backup (cron da VPS). O remoto e o nome que voce deu ao crypt
+; no `rclone config` -- ver deploy/README.md.
+remoto = controla-backup:
+; quem recebe o email de aviso, dando certo ou nao
+avisar = seu-email@gmail.com
+; quantos dias de dump ficam na propria VPS, em backups/
+dias_locais = 30

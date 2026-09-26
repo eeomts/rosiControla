@@ -139,4 +139,29 @@ final class EntradaTest extends TestCase
 
         $this->assertSame([['id' => 1], ['id' => 3]], $entrada->linhas('itens'));
     }
+
+    public function testSemProxyConfiavelUsaOEnderecoDaConexao(): void
+    {
+        $this->assertSame('172.18.0.1', self::comIp('172.18.0.1', '203.0.113.7')->ip(false));
+    }
+
+    public function testComProxyConfiavelUsaOXRealIp(): void
+    {
+        $this->assertSame('203.0.113.7', self::comIp('172.18.0.1', '203.0.113.7')->ip(true));
+    }
+
+    public function testXRealIpQueNaoEIpECaiNoEnderecoDaConexao(): void
+    {
+        $this->assertSame('172.18.0.1', self::comIp('172.18.0.1', 'nao-e-ip')->ip(true));
+    }
+
+    private static function comIp(string $conexao, string $realIp): Entrada
+    {
+        return new Entrada(new Request(
+            server: ['REQUEST_METHOD' => 'POST', 'REMOTE_ADDR' => $conexao, 'HTTP_X_REAL_IP' => $realIp],
+            get: [],
+            post: [],
+            files: [],
+        ));
+    }
 }

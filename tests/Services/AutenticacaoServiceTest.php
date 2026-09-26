@@ -4,10 +4,13 @@ namespace Controla\Tests\Services;
 
 use Controla\Models\Usuario;
 use Controla\Services\AutenticacaoService;
+use Controla\Services\LimiteDeTentativas;
 use Controla\Tests\Support\ControlaSchema;
 use Controla\Tests\Support\RemetenteFake;
+use Controla\Utils\Exceptions\CodigoNecessarioException;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\EmailNaoConfirmadoException;
+use Controla\Utils\Exceptions\MuitasTentativasException;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +23,8 @@ use RuntimeException;
 #[CoversClass(AutenticacaoService::class)]
 final class AutenticacaoServiceTest extends TestCase
 {
+    private const IP = '203.0.113.7';
+
     private AutenticacaoService $service;
 
     private RemetenteFake $remetente;
@@ -186,6 +191,8 @@ final class AutenticacaoServiceTest extends TestCase
 
         // fresh(): a tentativa foi gravada por outra instancia, e o Eloquent so salva o que mudou
         do {
+            // o reenvio tem espera: anda o relogio para fora dela
+            Carbon::setTestNow(Carbon::now()->addHours(2));
             $this->service->enviarCodigo($usuario->fresh());
         } while ($this->remetente->ultimoCodigo() === $antigo);
 
@@ -199,7 +206,7 @@ final class AutenticacaoServiceTest extends TestCase
     {
         $this->confirmada();
 
-        $usuario = $this->service->entrar('ROSI@exemplo.com ', 'senha-da-rosi');
+        $usuario = $this->service->entrar('ROSI@exemplo.com ', 'senha-da-rosi', self::IP);
 
         $this->assertSame('Rosi', $usuario->nome);
     }
@@ -227,7 +234,7 @@ final class AutenticacaoServiceTest extends TestCase
         $this->service->cadastrar($this->dados());
 
         try {
-            $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi');
+            $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', self::IP);
             $this->fail('Entrou sem confirmar o email.');
         } catch (EmailNaoConfirmadoException $e) {
             $this->assertSame('rosi@exemplo.com', $e->usuario->email);
@@ -241,7 +248,128 @@ final class AutenticacaoServiceTest extends TestCase
         $this->assertArrayHasKey('email', $this->errosDoLogin('rosi@exemplo.com', 'senha-errada'));
     }
 
+    # ------------------------------------------------------ LIMITE DO LOGIN
+
+    public function testCincoSenhasErradasBloqueiamOIpAteComASenhaCerta(): void
+    {
+        $this->confirmada();
+        $this->errarSenha(5);
+
+        try {
+            $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', self::IP);
+            $this->fail('Entrou com o ip bloqueado.');
+        } catch (MuitasTentativasException $e) {
+            $this->assertSame(60, $e->segundos);
+        }
+    }
+
+    public function testBloqueioNaoPegaOutroIp(): void
+    {
+        $this->confirmada();
+        $this->errarSenha(5);
+
+        $usuario = $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', '198.51.100.20');
+
+        $this->assertSame('Rosi', $usuario->nome);
+    }
+
+    public function testLoginCertoZeraAsFalhasDoIp(): void
+    {
+        $this->confirmada();
+        $this->errarSenha(4);
+
+        $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', self::IP);
+        $this->errarSenha(4);
+
+        $this->assertSame('Rosi', $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', self::IP)->nome);
+    }
+
+    public function testDezFalhasNaContaPedemOCodigoMesmoComASenhaCerta(): void
+    {
+        $this->confirmada();
+
+        for ($i = 0; $i < LimiteDeTentativas::FALHAS_DA_CONTA; $i++) {
+            $this->errosDoLogin('rosi@exemplo.com', 'senha-errada', "198.51.100.{$i}");
+        }
+
+        $this->expectException(CodigoNecessarioException::class);
+
+        $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', self::IP);
+    }
+
+    public function testConfirmarOCodigoLiberaAConta(): void
+    {
+        $usuario = $this->confirmada();
+
+        for ($i = 0; $i < LimiteDeTentativas::FALHAS_DA_CONTA; $i++) {
+            $this->errosDoLogin('rosi@exemplo.com', 'senha-errada', "198.51.100.{$i}");
+        }
+
+        $this->service->enviarCodigo($usuario->fresh());
+        $this->service->confirmar((int) $usuario->id, $this->remetente->ultimoCodigo());
+
+        $this->assertSame('Rosi', $this->service->entrar('rosi@exemplo.com', 'senha-da-rosi', self::IP)->nome);
+    }
+
+    public function testContaJaConfirmadaNaoPulaOCodigo(): void
+    {
+        $usuario = $this->confirmada();
+
+        $this->service->enviarCodigo($usuario->fresh());
+
+        $this->assertStringContainsString('errado', $this->errosDaConfirmacao($usuario, $this->codigoErrado()));
+    }
+
+    public function testReenvioEsperaCadaVezMais(): void
+    {
+        $usuario = $this->service->cadastrar($this->dados());
+
+        foreach (AutenticacaoService::ESPERAS_DO_CODIGO as $minutos) {
+            $this->service->enviarCodigo($usuario->fresh());
+
+            $this->assertSame($minutos * 60, $this->segundosParaReenviar($usuario));
+
+            Carbon::setTestNow(Carbon::now()->addMinutes($minutos));
+        }
+
+        $this->service->enviarCodigo($usuario->fresh());
+
+        $this->assertSame(60 * 60, $this->segundosParaReenviar($usuario));
+    }
+
+    public function testReenvioRecomecaDepoisDeUmDia(): void
+    {
+        $usuario = $this->service->cadastrar($this->dados());
+
+        $this->service->enviarCodigo($usuario->fresh());
+        Carbon::setTestNow(Carbon::now()->addMinutes(1));
+        $this->service->enviarCodigo($usuario->fresh());
+
+        Carbon::setTestNow(Carbon::now()->addHours(25));
+        $this->service->enviarCodigo($usuario->fresh());
+
+        $this->assertSame(60, $this->segundosParaReenviar($usuario));
+    }
+
     # ---------------------------------------------------------------- APOIO
+
+    private function errarSenha(int $vezes): void
+    {
+        for ($i = 0; $i < $vezes; $i++) {
+            $this->errosDoLogin('rosi@exemplo.com', 'senha-errada');
+        }
+    }
+
+    private function segundosParaReenviar(Usuario $usuario): int
+    {
+        try {
+            $this->service->enviarCodigo($usuario->fresh());
+        } catch (MuitasTentativasException $e) {
+            return $e->segundos;
+        }
+
+        $this->fail('O reenvio saiu sem espera.');
+    }
 
     /**
      * @param array<string,string> $troca
@@ -305,10 +433,10 @@ final class AutenticacaoServiceTest extends TestCase
     }
 
     /** @return array<string,string> */
-    private function errosDoLogin(string $email, string $senha): array
+    private function errosDoLogin(string $email, string $senha, string $ip = self::IP): array
     {
         try {
-            $this->service->entrar($email, $senha);
+            $this->service->entrar($email, $senha, $ip);
         } catch (DadosInvalidosException $e) {
             return $e->erros();
         }

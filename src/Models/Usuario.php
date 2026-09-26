@@ -28,6 +28,8 @@ class Usuario extends Model
         'email_confirmado' => 'boolean',
         'data_codigo_expira' => 'datetime',
         'num_tentativas' => 'integer',
+        'num_envios_codigo' => 'integer',
+        'data_ultimo_envio' => 'datetime',
     ];
 
     # ---------------------------------------------------------------- SCOPES

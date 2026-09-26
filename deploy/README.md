@@ -85,7 +85,15 @@ No `config/config.ini`, alem do resto:
 ```ini
 host.wan = https://controla.SEU-DOMINIO.com/
 proxy.wan = 127.0.0.1:8081
+
+[app]
+trusted_proxy = 1
 ```
+
+O `trusted_proxy = 1` faz o PHP ler o ip real do `X-Real-IP` que o nginx manda.
+Sem ele, todo mundo chega com o ip do proxy, e o limite de login bloqueia todos
+juntos na primeira pessoa que errar a senha 5 vezes. So ligue com o nginx na
+frente: sem proxy, qualquer um forja esse cabecalho.
 
 Com o `proxy.wan` preenchido, o `./deploy/controla` troca o endereco do Caddy
 por `:80` (sem certificado) e publica a porta so em `127.0.0.1`. Depois:

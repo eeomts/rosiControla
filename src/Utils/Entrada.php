@@ -2,6 +2,7 @@
 
 namespace Controla\Utils;
 
+use Cubo\Config;
 use Cubo\Http\Request;
 use Cubo\Routing\Route;
 
@@ -28,6 +29,25 @@ final class Entrada
     public function querFragmento(): bool
     {
         return $this->request->header('X-Requested-With') === 'fetch';
+    }
+
+    /**
+     * O ip de quem fez a requisicao. Atras do nginx o REMOTE_ADDR e o do proxy;
+     * o X-Real-IP so vale com [app] trusted_proxy, senao qualquer um o forja.
+     *
+     * @param bool|null $confiaNoProxy null le o [app] trusted_proxy do config.ini
+     */
+    public function ip(?bool $confiaNoProxy = null): string
+    {
+        $confiaNoProxy ??= (bool) Config::getInstance()->getConfig('ini.app.trusted_proxy');
+
+        $real = trim((string) $this->request->header('X-Real-IP'));
+
+        if ($confiaNoProxy && filter_var($real, FILTER_VALIDATE_IP) !== false) {
+            return $real;
+        }
+
+        return $this->request->ip();
     }
 
     /**

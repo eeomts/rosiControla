@@ -8,8 +8,10 @@ use Controla\Email\SmtpRemetente;
 use Controla\Middleware\AutenticacaoMiddleware;
 use Controla\Models\Usuario;
 use Controla\Services\AutenticacaoService;
+use Controla\Utils\Exceptions\CodigoNecessarioException;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\EmailNaoConfirmadoException;
+use Controla\Utils\Exceptions\MuitasTentativasException;
 use Controla\Utils\Redirecionamento;
 use Controla\Utils\Sessao;
 use Controla\Views\DefaultView;
@@ -59,12 +61,16 @@ final class AcessoController extends FeatureController
         $email = $this->request->texto('email');
 
         try {
-            $usuario = $this->service->entrar($email, $this->request->texto('senha'));
+            $usuario = $this->service->entrar($email, $this->request->texto('senha'), $this->request->ip());
         } catch (DadosInvalidosException $e) {
             $this->telaLogin($email, $e->erros());
 
             return;
-        } catch (EmailNaoConfirmadoException $e) {
+        } catch (MuitasTentativasException $e) {
+            $this->telaLogin($email, ['email' => "Muitas tentativas. Tente de novo em {$e->espera()}."]);
+
+            return;
+        } catch (EmailNaoConfirmadoException | CodigoNecessarioException $e) {
             $this->sessao->aguardarConfirmacao($e->usuario);
             $this->mandarCodigo($e->usuario);
 
@@ -138,7 +144,8 @@ final class AcessoController extends FeatureController
 
         $this->sessao->entrar($usuario);
 
-        $this->flash->sucesso("Email confirmado. Boas-vindas, {$usuario->nome}!");
+        // $this->flash->sucesso("Email confirmado. Boas-vindas, {$usuario->nome}!");
+        $this->flash->sucesso("Codigo confirmado. Boas-vindas, {$usuario->nome}!");
         Redirecionamento::para(self::URL_INICIO)->enviar();
     }
 
@@ -165,6 +172,8 @@ final class AcessoController extends FeatureController
         try {
             $this->service->enviarCodigo($usuario);
             $this->flash->sucesso("Mandei um codigo de 6 digitos para {$usuario->emailMascarado()}.");
+        } catch (MuitasTentativasException $e) {
+            $this->flash->erro("Um codigo acabou de sair. Para pedir outro, espere {$e->espera()}.");
         } catch (EmailNaoEnviadoException $e) {
             error_log('[Controla] ' . $e->getMessage());
             $this->flash->erro('Nao consegui mandar o email com o codigo. Tente reenviar daqui a pouco.');
@@ -216,7 +225,9 @@ final class AcessoController extends FeatureController
      */
     private function telaConfirmacao(Usuario $usuario, array $erros): void
     {
-        $this->pagina('Confirme o email', 'acesso/confirmacao.php', [
+        // a mesma tela serve o primeiro acesso e a verificacao depois de senha errada demais
+        // $this->pagina('Confirme o email', 'acesso/confirmacao.php', [
+        $this->pagina('Digite o codigo', 'acesso/confirmacao.php', [
             'email' => $usuario->emailMascarado(),
             'erros' => $erros,
             'minutos' => AutenticacaoService::MINUTOS_CODIGO,

@@ -92,6 +92,11 @@ charset = UTF-8
 ;ErrorHandler escreve aqui.
 log = storage/logs/erro.log
 
+; So com um proxy na frente (o nginx da VPS, ver proxy.wan): le o ip real do
+; X-Real-IP, que e por onde o limite de login conta. Sem proxy, deixe 0 --
+; ligado assim, qualquer um forja o cabecalho e escapa do bloqueio.
+trusted_proxy = 0
+
 [email]
 ; SMTP que manda o codigo de confirmacao do login. No Gmail: senha de APP
 ; (Conta Google -> Seguranca -> Senhas de app), nunca a senha da conta.

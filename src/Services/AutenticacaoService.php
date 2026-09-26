@@ -6,8 +6,10 @@ use Controla\Email\EmailNaoEnviadoException;
 use Controla\Email\Modelo;
 use Controla\Email\Remetente;
 use Controla\Models\Usuario;
+use Controla\Utils\Exceptions\CodigoNecessarioException;
 use Controla\Utils\Exceptions\DadosInvalidosException;
 use Controla\Utils\Exceptions\EmailNaoConfirmadoException;
+use Controla\Utils\Exceptions\MuitasTentativasException;
 // use Cubo\Security;
 use Illuminate\Support\Carbon;
 use RuntimeException;
@@ -29,9 +31,15 @@ final class AutenticacaoService
 
     private const LOGIN_RECUSADO = 'Email ou senha incorretos.';
 
+    /** @var list<int> minutos de espera depois do 1o, 2o, 3o... envio; do ultimo em diante, repete */
+    public const ESPERAS_DO_CODIGO = [1, 2, 5, 15, 60];
+
+    private const HORAS_DOS_ENVIOS = 24;
+
     public function __construct(
         private readonly Remetente $remetente,
         private readonly Modelo $modelo = new Modelo(),
+        private readonly LimiteDeTentativas $limite = new LimiteDeTentativas(),
     ) {}
 
     public function cadastroAberto(): bool
@@ -65,15 +73,24 @@ final class AutenticacaoService
     }
 
     /**
+     * @throws MuitasTentativasException Se o ultimo codigo saiu ha pouco tempo.
      * @throws EmailNaoEnviadoException
      */
     public function enviarCodigo(Usuario $usuario): void
     {
+        $espera = $this->segundosParaNovoCodigo($usuario);
+
+        if ($espera > 0) {
+            throw new MuitasTentativasException($espera);
+        }
+
         $codigo = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         $usuario->codigo = password_hash($codigo, PASSWORD_DEFAULT);
         $usuario->data_codigo_expira = Carbon::now()->addMinutes(self::MINUTOS_CODIGO);
         $usuario->num_tentativas = 0;
+        $usuario->num_envios_codigo = $this->enviosRecentes($usuario) + 1;
+        $usuario->data_ultimo_envio = Carbon::now();
         $usuario->save();
 
         $dados = [
@@ -98,9 +115,10 @@ final class AutenticacaoService
     {
         $usuario = $this->encontrar($id);
 
-        if ($usuario->email_confirmado) {
-            return $usuario;
-        }
+        // com a verificacao por codigo no login, "ja confirmado" nao pode pular o codigo
+        // if ($usuario->email_confirmado) {
+        //     return $usuario;
+        // }
 
         $this->validarCodigo($usuario, preg_replace('/\D/', '', $codigo) ?? '');
 
@@ -108,16 +126,22 @@ final class AutenticacaoService
         $usuario->codigo = null;
         $usuario->data_codigo_expira = null;
         $usuario->num_tentativas = 0;
+        $usuario->num_envios_codigo = 0;
         $usuario->save();
+
+        $this->limite->liberarConta((string) $usuario->email);
 
         return $usuario;
     }
 
     /**
+     * @param string $ip de onde veio a tentativa; e por ele que o bloqueio conta
      * @throws DadosInvalidosException A mesma mensagem para email que nao existe e senha errada.
+     * @throws MuitasTentativasException Se o ip errou demais; a senha nem e conferida.
      * @throws EmailNaoConfirmadoException
+     * @throws CodigoNecessarioException Se a conta errou demais: a senha certa nao basta.
      */
-    public function entrar(string $email, string $senha): Usuario
+    public function entrar(string $email, string $senha, string $ip): Usuario
     {
         $email = $this->normalizarEmail($email);
 
@@ -128,16 +152,30 @@ final class AutenticacaoService
             ]));
         }
 
+        $bloqueio = $this->limite->segundosBloqueado($ip);
+
+        if ($bloqueio > 0) {
+            throw new MuitasTentativasException($bloqueio);
+        }
+
         $usuario = Usuario::query()->porEmail($email)->first();
 
         $confere = password_verify($senha, $usuario?->senha ?? self::HASH_FALSO);
 
         if ($usuario === null || !$confere) {
+            $this->limite->registrarFalha($ip, $email);
+
             throw DadosInvalidosException::com(['email' => self::LOGIN_RECUSADO]);
         }
 
+        $this->limite->liberarIp($ip);
+
         if (!$usuario->email_confirmado) {
             throw new EmailNaoConfirmadoException($usuario);
+        }
+
+        if ($this->limite->contaExigeCodigo($email)) {
+            throw new CodigoNecessarioException($usuario);
         }
 
         if (password_needs_rehash((string) $usuario->senha, PASSWORD_DEFAULT)) {
@@ -172,6 +210,32 @@ final class AutenticacaoService
             'nome' => trim((string) ($dados['nome'] ?? '')),
             'email' => $this->normalizarEmail((string) ($dados['email'] ?? '')),
         ];
+    }
+
+    private function segundosParaNovoCodigo(Usuario $usuario): int
+    {
+        $envios = $this->enviosRecentes($usuario);
+
+        if ($envios === 0) {
+            return 0;
+        }
+
+        $minutos = self::ESPERAS_DO_CODIGO[min($envios, count(self::ESPERAS_DO_CODIGO)) - 1];
+        $libera = $usuario->data_ultimo_envio->copy()->addMinutes($minutos);
+
+        return max(0, (int) ceil(Carbon::now()->diffInSeconds($libera, false)));
+    }
+
+    /** Envio de mais de 24h atras nao conta: a escada de espera recomeca. */
+    private function enviosRecentes(Usuario $usuario): int
+    {
+        $ultimo = $usuario->data_ultimo_envio;
+
+        if ($ultimo === null || $ultimo->lt(Carbon::now()->subHours(self::HORAS_DOS_ENVIOS))) {
+            return 0;
+        }
+
+        return (int) $usuario->num_envios_codigo;
     }
 
     private function normalizarEmail(string $email): string

@@ -141,6 +141,17 @@ final class ControlaSchema
             $table->integer('deleted')->default(0);
         });
 
+        $schema->dropIfExists('tentativa_login');
+        $schema->create('tentativa_login', function (Blueprint $table): void {
+            $table->increments('id');
+            $table->string('ip', 45);
+            $table->string('email', 160);
+            $table->dateTime('data_tentativa');
+            $table->timestamp('created')->nullable();
+            $table->timestamp('updated')->nullable();
+            $table->integer('deleted')->default(0);
+        });
+
         $schema->dropIfExists('usuario');
         $schema->create('usuario', function (Blueprint $table): void {
             $table->increments('id');
@@ -150,6 +161,8 @@ final class ControlaSchema
             $table->string('codigo', 255)->nullable();
             $table->dateTime('data_codigo_expira')->nullable();
             $table->integer('num_tentativas')->default(0);
+            $table->integer('num_envios_codigo')->default(0);
+            $table->dateTime('data_ultimo_envio')->nullable();
             $table->string('senha', 255);
             $table->boolean('ativo')->default(1);
             $table->timestamp('created')->nullable();

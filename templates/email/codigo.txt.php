@@ -1,8 +1,6 @@
 <?php
 
 /**
- * Versao sem formatacao do codigo.php, para cliente que nao le html.
- *
  * @var string $nome
  * @var string $codigo
  * @var int $minutos
